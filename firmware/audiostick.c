@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
  * Author:  Angus Logan
- * Date:    June 2019   
+ * Date:    June 2019
  * Target:  Microchip [Atmel] ATtiny13A
  *
  * Physical <-> logical pin mapping
@@ -79,10 +79,10 @@ int main(void)
 
     /* Main application */
     setup();
-    
+
     for (;;) {
 
-        /* Debounce switch 
+        /* Debounce switch
            Shift all left, then add current to LSB
             -> compare again CLOSED/OPEN (depending on pullup/down)
         */
