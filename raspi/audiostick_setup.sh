@@ -17,8 +17,8 @@ if grep -Fxq /boot/config.txt $OVERLAY
 then
 	echo "DAC's overlay already present. Skipping."
 else
-	echo "" >> /boot/config.txt 
-	echo $OVERLAY >> /boot/config.txt 
+	echo "" >> /boot/config.txt
+	echo $OVERLAY >> /boot/config.txt
 fi
 
 ASOUND_F="/etc/asound.conf"
@@ -33,7 +33,7 @@ echo "Setting power management software to run at startup."
 echo "TODO"
 
 echo "Shutting down!"
-echo "When shutdown in complete, either pull the power or hold the button to reset."
+echo "When shutdown is complete, either pull the power or hold the button to reset."
 read -p "Continue? (y/n) " continue
 
 if [ "$continue" = "y" ]; then

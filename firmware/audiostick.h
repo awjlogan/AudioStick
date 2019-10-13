@@ -37,7 +37,7 @@ SOFTWARE.
 #define F_CPU       1200UL                                  /* Default clocking: 9.6 MHz / 8 (kHz) */
 #define CLK_DIV     64U                                     /* TMR0 clock divider from F_CPU */
 #define INT_PER     8U                                      /* Time between wakeups (ms) */
-#define TIM_VAL     (255U - (F_CPU * INT_PER / CLK_DIV))    /* Value to reset TMR0 */
+#define TMR0_VAL    (255U - (F_CPU * INT_PER / CLK_DIV))    /* Value to reset TMR0 */
 #define NORM_PER    500UL                                   /* Normal flashing period (ms) */
 #define NORM_VAL    NORM_PER / INT_PER                      /* Compare value */
 #define ERR_PER     250U                                    /* Error flashing period (ms) */

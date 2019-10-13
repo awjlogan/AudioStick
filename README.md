@@ -20,18 +20,18 @@ Turning ON:
 <pre>
            ______________
 S_REQ   __/              \___________
-                  ____________   
-RP_ACK  _________/            \______   
+                  ____________
+RP_ACK  _________/            \______
            __________________________
-PWR     __/                          
+PWR     __/
 </pre>
 
 Turning OFF:
 <pre>
            ____________
 S_REQ   __/            \_____________
-                 _____________   
-RP_ACK  ________/             \______   
+                 _____________
+RP_ACK  ________/             \______
         _________________________
 PWR                              \___
 </pre>
@@ -52,11 +52,13 @@ The PCB (v1.0) was designed in Eagle v9.2.0. The *.pcb* and *.sch* files are pro
 
 *All firmware is provided under the [MIT License][2]*
 
-The source for the power control microcontroller is provided, and can be compiled with *avr-gcc*. No additional libraries are required.
+The source for the power control microcontroller is provided, and can be compiled with the supplied Makefile. No additional libraries are required.
 
-### Flashing the ATtiny13A
+`<project_dir>/firmware/make`
 
-The header **J1** on the PCB is a standard Microchip \[Atmel\] 6 pin programming header. Using your compiled firmware (or the precompiled *.elf* file), you can flash the microcontroller with e.g. an AVR Dragon.
+### Flashing the ATTiny13A
+
+The header **J1** on the PCB is a standard Microchip \[Atmel\] 6 pin programming header. Using your compiled firmware (or the precompiled *.hex* file), you can flash the microcontroller with e.g. an AVR Dragon.
 
 - [ ] Check whether LED1 and R15 should be left unpopulated for flashing. _Revise for v1.1 if so_.
 

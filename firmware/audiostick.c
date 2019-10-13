@@ -26,7 +26,7 @@ SOFTWARE.
  *
  * Physical <-> logical pin mapping
  *
- * Package: SS (SOIC8)
+ * Package: SOIC8/DIP8
  * Physical     Function        Logical     i/o
  *----------------------------------------------
  *  1           !RST (switch)   PB5         i
@@ -43,39 +43,42 @@ SOFTWARE.
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+
 #include "audiostick.h"
 
 static inline void setup(void);
 
 ISR (TIM0_OVF_vect) {
     // Reset for idle interrupt wakeup
-    TCNT0 = TIM_VAL;
+    TCNT0 = TMR0_VAL;
 }
 
 int main(void)
 {
     /* Switch handler */
-    const uint8_t SW_OPEN = 0xFF;
-    const uint8_t SW_CLOSED = 0x0;
+    const uint8_t SW_OPEN = 0xFFU; // Switch goes to ground
+    const uint8_t SW_CLOSED = 0x0U;
     uint8_t sw_state = SW_OPEN;
     sw_t sw_curr = OPEN;
     sw_t sw_last = OPEN;
-    uint8_t was_pressed = 0U;
+    uint8_t was_pressed = 0x0U;
 
     /* Timers */
-    uint16_t rst_assert = 0x0;  // timer for reset button
-    uint16_t wdt_assert = 0x0;  // timer to catch a hang in a state
-    uint8_t wdt_overflow = 0U;
+    uint16_t rst_assert = 0x0U;  // timer for reset button
+    uint16_t wdt_assert = 0x0U;  // timer to catch a hang in a state
+    uint8_t wdt_overflow = 0x0U;
 
-    /* FSM */
-    power_fsm_t power_fsm = OFF;
-    power_fsm_t power_fsm_nxt = OFF;
-    uint8_t rp_ack= 0;
+    /*  FSM
+        From cold power on, start in ON - no software required on RPi
+    */
+    power_fsm_t power_fsm = ON;
+    power_fsm_t power_fsm_nxt = ON;
+    uint8_t rp_ack = 0x0U;
 
     /* Driven outputs */
     uint8_t portb_nxt;
     uint8_t flash_val = NORM_VAL;
-    uint8_t flash_cnt = 0;
+    uint8_t flash_count = 0x0U;
 
     /* Main application */
     setup();
@@ -87,7 +90,7 @@ int main(void)
             -> compare again CLOSED/OPEN (depending on pullup/down)
         */
         sw_state <<= 1;
-        sw_state += (PINB & (1<<SW)) >> SW;
+        if (PINB & (1<<SW)) sw_state++;
         if (sw_state == SW_CLOSED) sw_curr = CLOSED;
         else if (sw_state == SW_OPEN) sw_curr = OPEN;
 
@@ -127,26 +130,26 @@ int main(void)
         }
 
         /* Update the watchdog timer */
-        if (power_fsm != power_fsm_nxt) wdt_assert = 0U;
+        if (power_fsm != power_fsm_nxt) wdt_assert = 0x0U;
         else wdt_assert++;
 
         /* Check for reset */
         if ((sw_curr == CLOSED) && (sw_last == CLOSED)) rst_assert++;
-        else rst_assert = 0U;
+        else rst_assert = 0x0U;
         if (rst_assert > RST_VAL) power_fsm_nxt = OFF;
 
+        // Update FSM state
         power_fsm = power_fsm_nxt;
         sw_last = sw_curr;
 
         /* Drive FSM outputs */
-
         portb_nxt = PORTB;
 
         // Flash by default, exceptions ON/OFF are handled in FSM
-        flash_cnt++;
-        if (flash_cnt > flash_val) {
+        flash_count++;
+        if (flash_count > flash_val) {
             portb_nxt ^= (1<<LED);
-            flash_cnt = 0U;
+            flash_count = 0x0U;
         }
 
         switch (power_fsm) {
@@ -191,7 +194,7 @@ static inline void setup(void) {
     TCCR0B = (1<<CS01) | (1<<CS00);  // clk / 64
     TIMSK0 = (1<<TOIE0);
 
-    /* Ports: */
+    /* Port B: */
     MCUCR = (1<<PUD);  // disable pull ups
     DDRB = (1<<DDB0) | (1<<DDB1) | (1<<DDB3);
 
