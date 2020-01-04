@@ -26,12 +26,11 @@ SOFTWARE.
 #define AUDIOSTICK_H_
 
 // Pin assignments
-#define SW      5
-#define RP_ACK  4
-#define S_REQ   3
-#define RP_REQ  2
-#define LED     1
-#define PWR     0
+#define LED     4
+#define PWR     3
+#define SW      2
+#define ACK     1
+#define REQ     0
 
 // Time related defines
 #define F_CPU       1200UL                                  /* Default clocking: 9.6 MHz / 8 (kHz) */

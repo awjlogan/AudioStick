@@ -21,7 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
  * Author:  Angus Logan
- * Date:    June 2019
+ * Version: 2.0
+ * Date:    January 2020
  * Target:  Microchip [Atmel] ATtiny13A
  *
  * Physical <-> logical pin mapping
@@ -29,14 +30,14 @@ SOFTWARE.
  * Package: SOIC8/DIP8
  * Physical     Function        Logical     i/o
  *----------------------------------------------
- *  1           !RST (switch)   PB5         i
- *  2           S_REQ           PB3         o
- *  3           RP_ACK          PB4         i
- *  4           < GND >
- *  5           PWR             PB0         o
- *  6           LED             PB1         o
- *  7           RP_REQ          PB2         i
- *  8           < VDD >
+ *  1           !RST            PB5         -
+ *  2           PWR             PB3         o
+ *  3           LED             PB4         o
+ *  4           < GND >                     -
+ *  5           REQ             PB0         o
+ *  6           ACK             PB1         i
+ *  7           SW              PB2         i
+ *  8           < VDD >                     -
  *
  */
 
@@ -80,7 +81,7 @@ int main(void)
     uint8_t flash_val = NORM_VAL;
     uint8_t flash_count = 0x0U;
 
-    /* Main application */
+    /* Forever */
     setup();
 
     for (;;) {
@@ -90,14 +91,14 @@ int main(void)
             -> compare again CLOSED/OPEN (depending on pullup/down)
         */
         sw_state <<= 1;
-        if (PINB & (1<<SW)) sw_state++;
+        if (PINB & (1U<<SW)) sw_state++;
         if (sw_state == SW_CLOSED) sw_curr = CLOSED;
         else if (sw_state == SW_OPEN) sw_curr = OPEN;
 
         /* Reused conditions */
         was_pressed = (sw_curr == CLOSED) && (sw_last == OPEN);
         wdt_overflow = (wdt_assert > TIMEOUT_VAL);
-        rp_ack = (PINB & (1<<RP_ACK));
+        rp_ack = (PINB & (1U<<ACK));
 
         // update FSM
         switch (power_fsm) {
@@ -115,7 +116,7 @@ int main(void)
         case ON:
             if (was_pressed) power_fsm_nxt = SHUT_REQ;
             // request to shutdown from RPi
-            else if (PINB & (1<<RP_REQ)) power_fsm_nxt = SHUT_REQ;
+            else if (PINB & (1U<<REQ)) power_fsm_nxt = SHUT_REQ;
             break;
         case SHUT_REQ:
             if (wdt_overflow) power_fsm_nxt = ERROR;
@@ -148,29 +149,29 @@ int main(void)
         // Flash by default, exceptions ON/OFF are handled in FSM
         flash_count++;
         if (flash_count > flash_val) {
-            portb_nxt ^= (1<<LED);
+            portb_nxt ^= (1U<<LED);
             flash_count = 0x0U;
         }
 
         switch (power_fsm) {
         case OFF:
             flash_val = NORM_VAL;
-            portb_nxt &= ~(1<<LED) & ~(1<<PWR);  // LED & power off
+            portb_nxt &= ~(1U<<LED) & ~(1U<<PWR);  // LED & power off
             break;
         case START_REQ:
-            portb_nxt |= (1<<PWR) | (1<<S_REQ);  // power on and assert S_REQ
+            portb_nxt |= (1U<<PWR) | (1U<<REQ);  // power on and assert REQ
             break;
         case START_ACK:
-            portb_nxt &= ~(1<<S_REQ);  // Clear S_REQ
+            portb_nxt &= ~(1U<<REQ);  // Clear REQ
             break;
         case ON:
-            portb_nxt |= (1<<LED);  // LED on
+            portb_nxt |= (1U<<LED);  // LED on
             break;
         case SHUT_REQ:
-            portb_nxt |= (1<<S_REQ);  // Assert S_REQ
+            portb_nxt |= (1U<<REQ);  // Assert REQ
             break;
         case SHUT_ACK:
-            portb_nxt &= ~(1<<S_REQ);  // Clear S_REQ
+            portb_nxt &= ~(1U<<REQ);  // Clear REQ
             break;
         case ERROR:
             flash_val = ERR_VAL;
@@ -191,14 +192,15 @@ static inline void setup(void) {
 
     /* Timer0 */
     /* Overflow every INT_PER ms */
-    TCCR0B = (1<<CS01) | (1<<CS00);  // clk / 64
-    TIMSK0 = (1<<TOIE0);
+    TCCR0B = (1U<<CS01) | (1U<<CS00);  // clk / 64
+    TIMSK0 = (1U<<TOIE0);
 
     /* Port B: */
-    MCUCR = (1<<PUD);  // disable pull ups
-    DDRB = (1<<DDB0) | (1<<DDB1) | (1<<DDB3);
+    MCUCR = (1U<<PUD);  // disable pull ups
+    // Configure outputs
+    DDRB = (1U<<DDB0) | (1U<<DDB3) | (1U<<DDB4);
 
     /* Power reduction */
-    PRR = (1<<PRADC);  // ADC off
-    ACSR = (1<<ACD);  // analog comparator off
+    PRR = (1U<<PRADC);  // ADC off
+    ACSR = (1U<<ACD);  // analog comparator off
 }
