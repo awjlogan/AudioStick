@@ -235,6 +235,18 @@ MAX3223-MAX3243.pdf</description>
 <wire x1="5.08" y1="-2.54" x2="-2.54" y2="-2.54" width="0.254" layer="94"/>
 <wire x1="-2.54" y1="-2.54" x2="-2.54" y2="2.54" width="0.254" layer="94"/>
 </symbol>
+<symbol name="TPS73633">
+<wire x1="10.16" y1="7.62" x2="10.16" y2="-7.62" width="0.254" layer="94"/>
+<wire x1="10.16" y1="-7.62" x2="-10.16" y2="-7.62" width="0.254" layer="94"/>
+<wire x1="-10.16" y1="-7.62" x2="-10.16" y2="7.62" width="0.254" layer="94"/>
+<wire x1="-10.16" y1="7.62" x2="10.16" y2="7.62" width="0.254" layer="94"/>
+<pin name="VIN" x="-15.24" y="5.08" length="middle" direction="pwr"/>
+<pin name="VOUT" x="15.24" y="5.08" length="middle" direction="pwr" rot="R180"/>
+<pin name="GND" x="-15.24" y="-5.08" length="middle" direction="pwr"/>
+<pin name="EN" x="-15.24" y="0" length="middle" direction="in"/>
+<pin name="NR" x="15.24" y="0" length="middle" direction="pas" rot="R180"/>
+<text x="-10.16" y="10.16" size="1.778" layer="95">&gt;NAME</text>
+</symbol>
 </symbols>
 <devicesets>
 <deviceset name="PCM5102A" prefix="IC">
@@ -310,6 +322,29 @@ MAX3223-MAX3243.pdf</description>
 </connects>
 <package3dinstances>
 <package3dinstance package3d_urn="urn:adsk.eagle:package:23555/3"/>
+</package3dinstances>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="TPS73633" prefix="IC">
+<description>Texas Instruments TPS73633 LDO linear regulator, 400 mA</description>
+<gates>
+<gate name="G$1" symbol="TPS73633" x="0" y="0"/>
+</gates>
+<devices>
+<device name="MBDV" package="GHI_SOT23-5">
+<connects>
+<connect gate="G$1" pin="EN" pad="3"/>
+<connect gate="G$1" pin="GND" pad="2"/>
+<connect gate="G$1" pin="NR" pad="4"/>
+<connect gate="G$1" pin="VIN" pad="1"/>
+<connect gate="G$1" pin="VOUT" pad="5"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:6644359/2"/>
 </package3dinstances>
 <technologies>
 <technology name=""/>
