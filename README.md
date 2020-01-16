@@ -67,10 +67,12 @@ The header **J1** on the PCB is a standard Microchip \[Atmel\] 6 pin programming
 
 ## Change Notes
 
+- [x] ELE: _CPVDD_ not connected
 - [x] ELE: MOSI/MISO on ATtiny13 are swapped
 - [x] ELE: Rearrange pins on micro, remove RP_REQ
 - [x] ELE: ESD protection on ports
 - [x] DFM: Reduce BOM count by consolidating components.
+- [x] DFM: Use common 3V3 rail for PCM5102 power
 - [x] MCH: microSD card can't be removed if the RPi0 is soldered down
 - [ ] ~~MSC: Move to KiCad. (1.x -> 2.0)~~
 - [x] DFM: Place all components on single side.
