@@ -200,7 +200,7 @@ awjlogan 2020</text>
 <vertex x="39.828125" y="12.941" curve="-247.499889"/>
 <vertex x="40.58428125" y="12.435753125"/>
 </polygon>
-<text x="40.645" y="10.576" size="1.016" layer="25" font="vector" ratio="21" align="center">DBAD</text>
+<text x="40.375" y="10.5" size="1.016" layer="25" font="vector" ratio="21" align="center">DBAD</text>
 <text x="17" y="20.5" size="1.016" layer="25" font="vector" ratio="15" rot="R315" align="center-left">GND</text>
 <text x="17" y="24" size="1.016" layer="25" font="vector" ratio="15" rot="R315" align="center-left">VUSB</text>
 <text x="47" y="17" size="1.016" layer="25" font="vector" ratio="15" rot="R225" align="center-left">3V3</text>
