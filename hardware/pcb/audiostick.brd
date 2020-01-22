@@ -3053,8 +3053,6 @@ design rules under a new name.</description>
 <via x="31" y="23" extent="1-16" drill="0.254"/>
 <via x="30" y="23" extent="1-16" drill="0.254"/>
 <via x="28" y="23" extent="1-16" drill="0.254"/>
-<wire x1="30" y1="14.725" x2="29.275" y2="14.725" width="0.3048" layer="1"/>
-<wire x1="29.275" y1="14.725" x2="29" y2="15" width="0.3048" layer="1"/>
 <contactref element="Q2" pad="5"/>
 <contactref element="C15" pad="2"/>
 <contactref element="C13" pad="2"/>
@@ -3068,9 +3066,6 @@ design rules under a new name.</description>
 <contactref element="J1" pad="6"/>
 <contactref element="IC3" pad="11"/>
 <contactref element="IC3" pad="16"/>
-<wire x1="30" y1="14.075" x2="30" y2="14.725" width="0.3048" layer="1"/>
-<wire x1="29" y1="14.075" x2="29" y2="15" width="0.3048" layer="1"/>
-<wire x1="30" y1="17.325" x2="30" y2="16" width="0.3048" layer="1"/>
 <contactref element="TP8" pad="TP"/>
 <contactref element="TP9" pad="TP"/>
 <contactref element="C1" pad="2"/>
@@ -3127,8 +3122,8 @@ design rules under a new name.</description>
 <via x="25" y="19" extent="1-16" drill="0.254"/>
 <via x="27" y="11" extent="1-16" drill="0.254"/>
 <via x="37" y="13" extent="1-16" drill="0.254"/>
-<via x="22" y="8" extent="1-16" drill="0.254"/>
-<via x="22" y="3" extent="1-16" drill="0.254"/>
+<via x="23" y="9" extent="1-16" drill="0.254"/>
+<via x="23" y="2" extent="1-16" drill="0.254"/>
 <via x="20" y="12" extent="1-16" drill="0.254"/>
 <contactref element="C3" pad="2"/>
 <contactref element="IC1" pad="2"/>
@@ -3144,8 +3139,7 @@ design rules under a new name.</description>
 <via x="45.5" y="32" extent="1-16" drill="0.254"/>
 <via x="35" y="26" extent="1-16" drill="0.254"/>
 <via x="32" y="26" extent="1-16" drill="0.254"/>
-<via x="23.5" y="29" extent="1-16" drill="0.254"/>
-<via x="23.5" y="27" extent="1-16" drill="0.254"/>
+<via x="24.5" y="27.75" extent="1-16" drill="0.254"/>
 <via x="20" y="24" extent="1-16" drill="0.254"/>
 <via x="20" y="22" extent="1-16" drill="0.254"/>
 <via x="21" y="17.5" extent="1-16" drill="0.254"/>
