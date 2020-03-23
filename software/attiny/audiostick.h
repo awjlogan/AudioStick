@@ -33,34 +33,30 @@ SOFTWARE.
 #define REQ     0
 
 // Time related defines
-#define F_CPU       1200UL                                  /* Default clocking: 9.6 MHz / 8 (kHz) */
-#define CLK_DIV     64U                                     /* TMR0 clock divider from F_CPU */
-#define INT_PER     8U                                      /* Time between wakeups (ms) */
-#define TMR0_VAL    (255U - (F_CPU * INT_PER / CLK_DIV))    /* Value to reset TMR0 */
-#define NORM_PER    500UL                                   /* Normal flashing period (ms) */
-#define NORM_VAL    NORM_PER / INT_PER                      /* Compare value */
-#define ERR_PER     250U                                    /* Error flashing period (ms) */
-#define ERR_VAL     ERR_PER / INT_PER                       /* Compare value */
-#define RST_PER     2500UL                                  /* Time to hold for reset */
-#define RST_VAL     RST_PER / INT_PER                       /* Compare value */
-#define TIMEOUT_PER 32000UL                                 /* Error time out (ms) */
-#define TIMEOUT_VAL TIMEOUT_PER / INT_PER                   /* Compare value */
+#define F_CPU               2400UL /* 9.6 MHz / 4 (kHz) */
+
+#define PWM_RES             8U
+#define PWM_UPDATE_CNT      (F_CPU / 256) / PWM_RES
 
 // Power states
 typedef enum {
     OFF,
-    START_REQ,
-    START_ACK,
+    START,
     ON,
-    SHUT_REQ,
-    SHUT_ACK,
+    SHUTDOWN_REQ,
+    SHUTDOWN,
     ERROR
 } power_fsm_t;
 
 // Button states
 typedef enum {
     OPEN,
-    CLOSED
+    CLOSED,
+    BOUNCE
 } sw_t;
+
+// Functions
+static inline void setup(void);
+static inline sw_t debounce_switch(uint8_t *sw_raw);
 
 #endif /* AUDIOSTICK_H_ */
