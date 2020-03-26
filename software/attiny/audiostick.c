@@ -53,8 +53,14 @@
 
 #include "audiostick.h"
 
+ISR(TIM0_COMPB_vect) {
+	// Turn LED off for PWM effect
+	PORTB &= ~(1 << LED);
+}
+
 ISR (TIM0_OVF_vect) {
-    // No operation, just wake up
+    // Turn LED on for PWM effect
+    PORTB |= (1 << LED);
 }
 
 int main(void)
@@ -72,10 +78,34 @@ int main(void)
     sw_t sw_current = OPEN;
     sw_t sw_last = OPEN;
 
+    uint8_t cnt_ovf_pulse = 0x0U;
+    uint8_t idx_pwm = 0x0U;
+    bool brighten = true;
+
+    const uint8_t pwm_vals[8] = {4, 8, 16, 32, 64, 128, 200, 255};
+
     setup();
 
     /* Forever */
     for (;;) {
+
+        // Turn on LED
+        cnt_ovf_pulse++;
+        if (cnt_ovf_pulse == 146) {
+        	cnt_ovf_pulse = 0x0U;
+
+        	if (brighten) {
+        		idx_pwm++;
+        	} else {
+        		idx_pwm--;
+        	}
+        	if (idx_pwm == 7U) {
+    			brighten = false;
+    		} else if (idx_pwm == 0x0U) {
+    			brighten = true;
+    		}
+    		OCR0B = pwm_vals[idx_pwm];
+        }
 
         // Every 8 ms, check switch
         // REVISIT magic number calculation in defines
@@ -99,7 +129,7 @@ int main(void)
             if (sw_current != sw_last) {
                 if (sw_current == CLOSED) {
                     // REVISIT remove when working
-                    PORTB ^= (1 << LED) | (1 << PWR);
+                    // PORTB ^= (1 << LED) | (1 << PWR);
                     sw_pressed = true;
                 }
             }
@@ -164,7 +194,7 @@ inline void setup(void) {
     /* Timer0 */
     /* Overflow every INT_PER ms */
     TCCR0B = (1U<<CS01);  // clk / 8 -> 1.176 kHz overflow
-    TIMSK0 = (1U << TOIE0); // overflow
+    TIMSK0 = (1U << TOIE0) | (1U << OCIE0B); // overflow, compare B
 
     /* Port B: */
     MCUCR = (1U<<PUD);  // disable pull ups
