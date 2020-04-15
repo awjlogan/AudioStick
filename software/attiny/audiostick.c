@@ -53,126 +53,118 @@
 
 #include "audiostick.h"
 
-ISR(TIM0_COMPB_vect) {
-	// Turn LED off for PWM effect
-	PORTB &= ~(1 << LED);
-}
-
 ISR (TIM0_OVF_vect) {
-    // Turn LED on for PWM effect
-    PORTB |= (1 << LED);
+    // Just roll over to trigger wake up
+    return;
 }
 
 int main(void)
 {
 
     // Power FSM
-    power_fsm_t fsm_state = OFF;
-    power_fsm_t fsm_state_nxt = OFF;
-    bool rpi_ack = false;
+    power_fsm_t fsm_state = START;
+    power_fsm_t fsm_state_nxt = START;
+    uint8_t portb_tmp;
 
     // Switch debouncing
     bool sw_pressed = false;
-    uint8_t cnt_ovf_debounce = 0x0U;
-    uint8_t sw_debounce = 0x0U;
+    bool sw_pressed_hold = false;
+    uint8_t sw_debounce = SW_OPEN;
+    uint8_t cnt_ovf_debounce = 0x00U;
+    uint16_t cnt_ovf_off_press = 0x0000U;
     sw_t sw_current = OPEN;
     sw_t sw_last = OPEN;
 
-    uint8_t cnt_ovf_pulse = 0x0U;
-    uint8_t idx_pwm = 0x0U;
-    bool brighten = true;
-
-    const uint8_t pwm_vals[8] = {4, 8, 16, 32, 64, 128, 200, 255};
+    // LED flashing
+    uint16_t cnt_ovf_led_flash = 0x0000U;
 
     setup();
 
     /* Forever */
     for (;;) {
 
-        // Turn on LED
-        cnt_ovf_pulse++;
-        if (cnt_ovf_pulse == 146) {
-        	cnt_ovf_pulse = 0x0U;
-
-        	if (brighten) {
-        		idx_pwm++;
-        	} else {
-        		idx_pwm--;
-        	}
-        	if (idx_pwm == 7U) {
-    			brighten = false;
-    		} else if (idx_pwm == 0x0U) {
-    			brighten = true;
-    		}
-    		OCR0B = pwm_vals[idx_pwm];
-        }
-
-        // Every 8 ms, check switch
-        // REVISIT magic number calculation in defines
-        // REVISIT refactor
+        // Every T_DEBOUNCE_MS, check switch
         sw_pressed = false;
         cnt_ovf_debounce++;
-        if (cnt_ovf_debounce == 106) {
-            cnt_ovf_debounce = 0;
+        if (cnt_ovf_debounce >= OVF_CNT_DEBOUNCE) {
+            cnt_ovf_debounce = 0x00U;
 
+            // Shift left, and add switch input (open == HIGH)
             sw_debounce = sw_debounce << 1;
-            if (!(PINB & (0x1U << SW))) {
+            if (PINB & (0x1U << SW)) {
                 sw_debounce++;
             }
+            // sw_debounce += (PINB && (0x1U << SW));
 
-            if (sw_debounce == 0xFFU) {
+            if (sw_debounce == SW_CLOSED) {
                 sw_current = CLOSED;
-            } else if (sw_debounce == 0x0U) {
+            } else if (sw_debounce == SW_OPEN) {
                 sw_current = OPEN;
             }
 
-            if (sw_current != sw_last) {
-                if (sw_current == CLOSED) {
-                    // REVISIT remove when working
-                    // PORTB ^= (1 << LED) | (1 << PWR);
-                    sw_pressed = true;
-                }
+            if (sw_current == CLOSED) {
+                sw_pressed = true;
             }
-            sw_last = sw_current;
 
+           sw_last = sw_current;
         }
 
-        fsm_state_nxt = fsm_state;
-        rpi_ack = PINB & (1 << ACK);
+        // FSM update
         switch (fsm_state) {
             case OFF:
-                if (sw_pressed) {
-                    fsm_state_nxt = START;
-                }
+                fsm_state_nxt = sw_pressed ? START : OFF;
                 break;
             case START:
-                if (rpi_ack) {
-                    fsm_state_nxt = ON;
-                }
+                fsm_state_nxt = (PINB & (0x1U << ACK)) ? ON : START;
                 break;
             case ON:
-                if (!rpi_ack) {
-                    fsm_state_nxt = SHUTDOWN_REQ;
-                } else if (sw_pressed) {
-                    fsm_state_nxt = SHUTDOWN;
-                }
+
+                // Hold sw_pressed so the button must be pressed and held in ON
+                // if (!sw_pressed_hold) {
+                //     sw_pressed_hold = sw_pressed;
+                // }
+
+                fsm_state_nxt = sw_pressed ? STOP : ON;
                 break;
-            case SHUTDOWN_REQ:
-                if (rpi_ack) {
-                    fsm_state_nxt = SHUTDOWN;
-                }
-                break;
-            case SHUTDOWN:
-                if (!rpi_ack) {
-                    fsm_state_nxt = OFF;
-                }
+            case STOP:
+                // sw_pressed_hold = false;  // Reset hold
+                fsm_state_nxt = (!(PINB & (0x1U << ACK))) ? OFF : STOP;
                 break;
             default:
-                fsm_state_nxt = ERROR;
+                break;
         }
 
+        // Outputs
+        fsm_state = fsm_state_nxt;
+        if (fsm_state == OFF) {
+            // LED and power OFF
+            // REVISIT pulse LED
+            PORTB = 0x00U;
+        } else if ((fsm_state == START) || (fsm_state == STOP)) {
+            // LED FLASH, power ON
+            portb_tmp = PORTB;
+            portb_tmp |= (0x1U << PWR);
 
-        // Sleep and wait for timer0 interrupt
+            if (fsm_state == START) {
+                portb_tmp |= (0x1U << REQ);
+            } else {
+                portb_tmp &= ~(0x1U << REQ);
+            }
+
+            cnt_ovf_led_flash++;
+            if (cnt_ovf_led_flash > OVF_CNT_LED_FLASH) {
+                portb_tmp ^= (0x1U << LED);
+                cnt_ovf_led_flash = 0x0000U;
+            }
+
+            PORTB = portb_tmp;
+
+        } else if (fsm_state == ON) {
+            // LED and power ON
+            PORTB = ((0x1U << LED) | (0x1U << PWR) | (0x1U << REQ));
+        }
+
+        // Sleep and wait for TIM0 interrupt
         sleep_enable();
         sleep_cpu();
         sleep_disable();
@@ -193,16 +185,16 @@ inline void setup(void) {
 
     /* Timer0 */
     /* Overflow every INT_PER ms */
-    TCCR0B = (1U<<CS01);  // clk / 8 -> 1.176 kHz overflow
-    TIMSK0 = (1U << TOIE0) | (1U << OCIE0B); // overflow, compare B
+    TCCR0B = (0x1U << CS01);  // clk / 8 -> 1.176 kHz overflow
+    TIMSK0 = (0x1U << TOIE0); // Interrupt on overflow
 
     /* Port B: */
-    MCUCR = (1U<<PUD);  // disable pull ups
+    MCUCR = (0x1U << PUD);  // disable pull ups
     // Configure outputs
-    DDRB = (1U<<DDB0) | (1U<<DDB3) | (1U<<DDB4);
+    DDRB = (0x1U << REQ) | (0x1U << PWR) | (0x1U << LED);
 
     /* Power reduction */
-    PRR = (1U<<PRADC);  // ADC off
-    ACSR = (1U<<ACD);  // analog comparator off
+    PRR = (0x1U << PRADC);  // ADC off
+    ACSR = (0x1U << ACD);  // analog comparator off
 }
 
