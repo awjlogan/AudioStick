@@ -3,7 +3,7 @@ MCU=attiny13a
 CC			= avr-gcc
 OBJCOPY 	= avr-objcopy
 SIZE 		= avr-size
-CFLAGS 		= -std=c99 -Wall -g -Werror=switch -pedantic -Os --short-enums -mmcu=${MCU} -I.
+CFLAGS 		= -std=c99 -Wall -g -Werror=switch -pedantic -O2 --short-enums -mmcu=${MCU} -I.
 TARGET 		= audiostick
 SRCS 		= audiostick.c
 MCU_FLASH 	= attiny13

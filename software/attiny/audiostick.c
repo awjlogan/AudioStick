@@ -55,28 +55,26 @@
 
 ISR (TIM0_OVF_vect) {
     // Just roll over to trigger wake up
-    return;
 }
 
 int main(void)
 {
 
     // Power FSM
-    power_fsm_t fsm_state = START;
-    power_fsm_t fsm_state_nxt = START;
-    uint8_t portb_tmp;
+    power_fsm_t fsm_state = OFF;          // Boot at plugin
+    power_fsm_t fsm_state_nxt = OFF;
+    uint8_t portb_tmp;                      // Reduce R-M-W cycles
 
     // Switch debouncing
     bool sw_pressed = false;
-    bool sw_pressed_hold = false;
     uint8_t sw_debounce = SW_OPEN;
-    uint8_t cnt_ovf_debounce = 0x00U;
-    uint16_t cnt_ovf_off_press = 0x0000U;
     sw_t sw_current = OPEN;
-    sw_t sw_last = OPEN;
 
-    // LED flashing
-    uint16_t cnt_ovf_led_flash = 0x0000U;
+    // Timed event counters
+    uint8_t cnt_ovf_debounce = 0x00U;       // Time between switch samples
+    uint16_t cnt_ovf_led_flash = 0x0000U;   // Time between LED flashes
+    uint16_t cnt_ovf_off_press = 0x0000U;   // Time sw is held down for OFF press
+    uint16_t cnt_ovf_off_wait = 0x0000U;    // Time to remain powered after !ACK
 
     setup();
 
@@ -94,7 +92,6 @@ int main(void)
             if (PINB & (0x1U << SW)) {
                 sw_debounce++;
             }
-            // sw_debounce += (PINB && (0x1U << SW));
 
             if (sw_debounce == SW_CLOSED) {
                 sw_current = CLOSED;
@@ -104,31 +101,31 @@ int main(void)
 
             if (sw_current == CLOSED) {
                 sw_pressed = true;
+                cnt_ovf_off_press++;
             }
-
-           sw_last = sw_current;
         }
 
         // FSM update
         switch (fsm_state) {
             case OFF:
                 fsm_state_nxt = sw_pressed ? START : OFF;
+                // Reset timer counters
+                cnt_ovf_off_wait = 0x0000U;
+                cnt_ovf_off_press = 0x0000U;
                 break;
             case START:
                 fsm_state_nxt = (PINB & (0x1U << ACK)) ? ON : START;
                 break;
             case ON:
-
-                // Hold sw_pressed so the button must be pressed and held in ON
-                // if (!sw_pressed_hold) {
-                //     sw_pressed_hold = sw_pressed;
-                // }
-
-                fsm_state_nxt = sw_pressed ? STOP : ON;
+                fsm_state_nxt = (sw_pressed && (cnt_ovf_off_press > OVF_CNT_OFF_PRESS)) ? STOP : ON;
                 break;
             case STOP:
-                // sw_pressed_hold = false;  // Reset hold
-                fsm_state_nxt = (!(PINB & (0x1U << ACK))) ? OFF : STOP;
+                fsm_state_nxt = (!(PINB & (0x1U << ACK))) ? STOP_WAIT : STOP;
+                break;
+            case STOP_WAIT:
+                // Wait for OVF_CNT_OFF_WAIT cycles before removing power
+                cnt_ovf_off_wait++;
+                fsm_state_nxt = (cnt_ovf_off_wait > OVF_CNT_OFF_WAIT) ? OFF : STOP_WAIT;
                 break;
             default:
                 break;
@@ -137,14 +134,15 @@ int main(void)
         // Outputs
         fsm_state = fsm_state_nxt;
         if (fsm_state == OFF) {
-            // LED and power OFF
+            // LED and power OFF, REQ low
             // REVISIT pulse LED
             PORTB = 0x00U;
-        } else if ((fsm_state == START) || (fsm_state == STOP)) {
+        } else if ((fsm_state == START) || (fsm_state == STOP) || (fsm_state == STOP_WAIT)) {
             // LED FLASH, power ON
             portb_tmp = PORTB;
             portb_tmp |= (0x1U << PWR);
 
+            // REQ is high in START, low in STOP and STOP_WAIT
             if (fsm_state == START) {
                 portb_tmp |= (0x1U << REQ);
             } else {
@@ -160,7 +158,7 @@ int main(void)
             PORTB = portb_tmp;
 
         } else if (fsm_state == ON) {
-            // LED and power ON
+            // LED and power ON, REQ high
             PORTB = ((0x1U << LED) | (0x1U << PWR) | (0x1U << REQ));
         }
 
