@@ -20,6 +20,22 @@ There is a power controller on the board to safely turn on/off the Raspberry Pi,
 
 ## Raspberry Pi Setup
 
+Setting up audiostick
+
+Setup for PCM5102:
+Configure overlay: /boot/config.txt
+uncomment: dtparam=i2s=on
+comment: #dtparam=audio=on
+add: dtoverlay=hifiberry-dac
+
+Create asound: /etc/asound.conf
+pcm.!default {
+ type hw card 0
+}
+ctl.!default {
+ type hw card 0
+}
+
 install:
 mpd
 avahi-daemon
@@ -30,16 +46,26 @@ change hostname to location (optional):
 /etc/hostname (to match above)
 
 make directory:
-/media/nas_homes
+/media/nas_music
 
-add entry to /etc/fstab:
-turnlanevault.local:/volume1/music /media/nas_music nfs auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
+Configure fstab: /etc/fstab:
+NASHOST.local:/volume1/music /media/nas_music nfs auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
 
-configure mpd /etc/mpd.conf
+Mount at startup:
+In raspi-config, set "Wait for network at boot"
+https://raspberrypi.stackexchange.com/questions/27179/automatic-mounting-of-nas-drive-fails
+
+Disable swap file:
+sudo apt remove dphys-swapfile
+
+Start AudioStick handler:
+TODO
+
+Configure mpd: /etc/mpd.conf
 set /media/nas_music as music directory
-set bind_to_address to hostname
-set restore_paused to yes
-set up mixer ?
+
+Android MPD client: MALP
+
 
 ## Hardware
 
@@ -51,7 +77,7 @@ The PCB was designed using [EAGLE][eagle-web] v9. The *.pcb* and *.sch* files ar
 
 The source for the power control microcontroller is provided, and can be compiled with the supplied Makefile. You will need to alter `Makefile` with the programmer that you are using. To compile the firmware:
 
-`> /firmware/make all`
+`> /firmware/make`
 
 The header **J1** on the PCB is a standard Microchip \[Atmel\] 6 pin programming header. Using your compiled firmware (or the precompiled *.hex* file), you can flash the microcontroller with e.g. an Atmel ICE. To flash the microcontroller, run:
 

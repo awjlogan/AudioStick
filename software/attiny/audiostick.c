@@ -61,14 +61,13 @@ int main(void)
 {
 
     // Power FSM
-    power_fsm_t fsm_state = OFF;          // Boot at plugin
-    power_fsm_t fsm_state_nxt = OFF;
+    power_fsm_t fsm_state = START;          // Boot at plugin
+    power_fsm_t fsm_state_nxt = START;
     uint8_t portb_tmp;                      // Reduce R-M-W cycles
 
     // Switch debouncing
     bool sw_pressed = false;
     uint8_t sw_debounce = SW_OPEN;
-    sw_t sw_current = OPEN;
 
     // Timed event counters
     uint8_t cnt_ovf_debounce = 0x00U;       // Time between switch samples
@@ -82,7 +81,6 @@ int main(void)
     for (;;) {
 
         // Every T_DEBOUNCE_MS, check switch
-        sw_pressed = false;
         cnt_ovf_debounce++;
         if (cnt_ovf_debounce >= OVF_CNT_DEBOUNCE) {
             cnt_ovf_debounce = 0x00U;
@@ -93,41 +91,48 @@ int main(void)
                 sw_debounce++;
             }
 
-            if (sw_debounce == SW_CLOSED) {
-                sw_current = CLOSED;
-            } else if (sw_debounce == SW_OPEN) {
-                sw_current = OPEN;
-            }
-
-            if (sw_current == CLOSED) {
-                sw_pressed = true;
-                cnt_ovf_off_press++;
-            }
+            sw_pressed = (sw_debounce == SW_CLOSED) ? true : false;
         }
 
         // FSM update
         switch (fsm_state) {
             case OFF:
                 fsm_state_nxt = sw_pressed ? START : OFF;
-                // Reset timer counters
-                cnt_ovf_off_wait = 0x0000U;
-                cnt_ovf_off_press = 0x0000U;
                 break;
             case START:
                 fsm_state_nxt = (PINB & (0x1U << ACK)) ? ON : START;
                 break;
             case ON:
-                fsm_state_nxt = (sw_pressed && (cnt_ovf_off_press > OVF_CNT_OFF_PRESS)) ? STOP : ON;
+                // Button must be pressed and held
+                fsm_state_nxt = (cnt_ovf_off_press > OVF_CNT_OFF_PRESS) ? STOP : ON;
                 break;
             case STOP:
                 fsm_state_nxt = (!(PINB & (0x1U << ACK))) ? STOP_WAIT : STOP;
                 break;
             case STOP_WAIT:
                 // Wait for OVF_CNT_OFF_WAIT cycles before removing power
-                cnt_ovf_off_wait++;
                 fsm_state_nxt = (cnt_ovf_off_wait > OVF_CNT_OFF_WAIT) ? OFF : STOP_WAIT;
                 break;
             default:
+                break;
+        }
+
+        // Counter updates
+        switch (fsm_state) {
+            case ON:
+                // Must be pressed and held
+                if (sw_pressed) {
+                    cnt_ovf_off_press++;
+                } else {
+                    cnt_ovf_off_press = 0x0000U;
+                }
+                break;
+            case STOP_WAIT:
+                cnt_ovf_off_wait++;
+                break;
+            default:
+                cnt_ovf_off_press = 0x0000U;
+                cnt_ovf_off_wait = 0x0000U;
                 break;
         }
 
