@@ -43,7 +43,7 @@
 #define T_DEBOUNCE_MS       8ULL         /* Period to check for debouncing */
 #define T_LED_FLASH_MS      500ULL       /* 1/2 Period of LED flash */
 #define T_OFF_PRESS_MS      1000ULL      /* Delay to recognise press to turn off */
-#define T_OFF_WAIT_MS       24000ULL     /* Time to remain powered on after !ACK */
+#define T_OFF_WAIT_MS       10000ULL     /* Time to remain powered on after !ACK */
 
 #define OVF_CNT_DEBOUNCE    T_DEBOUNCE_MS * OVF_FACTOR
 #define OVF_CNT_LED_FLASH   T_LED_FLASH_MS * OVF_FACTOR
