@@ -1,0 +1,11 @@
+[Unit]
+Description=AudioStick power controller for Pi
+Requires=local-fs.target
+
+[Service]
+Type=simple
+ExecStart=/opt/audiostick/audiostick_power.py
+WorkingDirectory=/opt/audiostick/
+
+[Install]
+WantedBy=multi-user.target
