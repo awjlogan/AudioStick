@@ -1,24 +1,45 @@
 # AudioStick
 
-Quality audio carrier board for the Raspberry Pi Zero.
+Quality audio carrier board for the Raspberry Pi Zero. A self facilitating media node.
 
 ## Description and Getting Started
 
-This board is designed to be used with a Raspberry Pi Zero (W) to turn it into small high quality streaming audio device.
+This board is designed to be used with a Raspberry Pi Zero (W) to turn it into small high quality streaming audio device. It incorporates a soft power switch, which makes it easier to use in normal settings (e.g., don't need to SSH in to shutdown) and prolong the life of the SD card. The AudioStick connects directly to the standard Raspberry Pi 40pin GPIO header.
 
 All design files and source code are under the [_Don't Be A Dick_][dbad-github] license.
 
-### DAC
+### Installation on the Raspberry Pi
 
-The DAC used is a PCM5102, which has:
- * An internal PLL to deal with the SPI clocking scheme.
- * A built in charge pump supply to ground reference the output, which removes the need for output coupling capacitors.
+From a clean installation of Raspbian, log in to your Raspberry Pi and run the following 3 lines:
 
-### Power controller
+```shell
+> git clone https://github.com/awjlogan/audiostick/audiostick.git
+> cd ./audiostick
+> sudo audiostick_setup.sh
+```
 
-There is a power controller on the board to safely turn on/off the Raspberry Pi, which will reduce the likelyhood of corrupting the SD card. The 4-phase asynchronous handshake used between the two components ensures that power is applied or removed correctly. The handshake is shown below:
+The `audiostick_setup.sh` script will:
+ - Install the PCM5102's configuration in the boot configuration
+ - Add the `asound.conf` configuration file
+ - Add the power control service
 
-## Raspberry Pi Setup
+When it is complete, you will need to shutdown and then remove the power before powering on again.
+
+### Using the AudioStick
+
+ - When the AudioStick is off, there is no power supplied to the Raspberry Pi, so power consumption is minimised. The power LED will pulse slowly.
+ - Pressing the button will power on the Raspberry Pi. The power LED will flash until the Raspberry Pi has successfully booted, at which point it will stay on.
+ -To turn the AudioStick OFF, press and hold the button for at least one second. The power LED will flash until the Raspberry Pi has safely shutdown. Once the LED returns to pulsing, the Raspberry Pi is completely off and it is safe to remove the power if you wish.
+
+### Raspberry Pi Setup
+
+The AudioStick is intended to be used with something like MPD to allow you to connect up to any speaker (with amplifier) and get access to your local music or streaming services controlled by your phone. There are a lot of good tutorials (REVISIT add some links) available, so I won't reiterate the points here, but here are a few additional things that might be useful:
+
+ - Change the Raspberry Pi's hostname to a meaningful name, for example `livingroompi`. This will also allow you to have multiple AudioSticks on the same network.
+
+ - Configure your NAS (or whatever storage) to mount at boot time in `/etc/fstab`. Be aware that the system might attempt to mount the device before the network is available.
+
+ - Disable the swap file to increase the SD card's life (`sudo apt remove dphys-swapfile`)
 
 Setting up audiostick
 
@@ -27,44 +48,6 @@ Configure overlay: /boot/config.txt
 uncomment: dtparam=i2s=on
 comment: #dtparam=audio=on
 add: dtoverlay=hifiberry-dac
-
-Create asound: /etc/asound.conf
-pcm.!default {
- type hw card 0
-}
-ctl.!default {
- type hw card 0
-}
-
-install:
-mpd
-avahi-daemon
-mpc ?
-
-change hostname to location (optional):
-/etc/hosts (change 127.0.0.1 entry)
-/etc/hostname (to match above)
-
-make directory:
-/media/nas_music
-
-Configure fstab: /etc/fstab:
-NASHOST.local:/volume1/music /media/nas_music nfs auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
-
-Mount at startup:
-In raspi-config, set "Wait for network at boot"
-https://raspberrypi.stackexchange.com/questions/27179/automatic-mounting-of-nas-drive-fails
-
-Disable swap file:
-sudo apt remove dphys-swapfile
-
-Start AudioStick handler:
-TODO
-
-Configure mpd: /etc/mpd.conf
-set /media/nas_music as music directory
-
-Android MPD client: MALP
 
 
 ## Hardware
@@ -83,6 +66,11 @@ The header **J1** on the PCB is a standard Microchip \[Atmel\] 6 pin programming
 
 `> /firmware/make flash`
 
+## Version 3 Notes
+
+ - I will be moving to KiCad 5 for PCB design
+ - I will be moving from the ATtiny13A to the ATtiny202
+ - The physical layout will be significantly changed, and I hope to produce a custom case for it.
 
 ## Datasheets and useful links
 

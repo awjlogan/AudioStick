@@ -7,15 +7,8 @@ fi
 
 echo "Setting up AudioStick requirements."
 
-apt install -y git mpd
+apt install -y git mpd avahi-daemon
 AUDIOSTICKDIR="audiostick/software/raspi"
-
-if [ -d "$AUDIOSTICKDIR" ]; then
-    echo "audiostick directory already exists, please remove it and restart."
-    exit 1
-else
-    git clone https://github.com/awjlogan/audiostick/audiostick.git
-fi
 
 echo "Backing up /boot/config.txt to ~/"
 cp -v /boot/config.txt ~/config.txt_back
