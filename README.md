@@ -29,7 +29,7 @@ When it is complete, you will need to shutdown and then remove the power before 
 
  - When the AudioStick is off, there is no power supplied to the Raspberry Pi, so power consumption is minimised. The power LED will pulse slowly.
  - Pressing the button will power on the Raspberry Pi. The power LED will flash until the Raspberry Pi has successfully booted, at which point it will stay on.
- -To turn the AudioStick OFF, press and hold the button for at least one second. The power LED will flash until the Raspberry Pi has safely shutdown. Once the LED returns to pulsing, the Raspberry Pi is completely off and it is safe to remove the power if you wish.
+ - To turn the AudioStick OFF, press and hold the button for at least one second. The power LED will flash until the Raspberry Pi has safely shutdown. Once the LED returns to pulsing, the Raspberry Pi is completely off and it is safe to remove the power if you wish.
 
 ### Raspberry Pi Setup
 
