@@ -29,11 +29,11 @@
 #define AUDIOSTICK_H_
 
 // Pin assignments
-#define LED     4
+#define LED     0
 #define PWR     3
 #define SW      2
 #define ACK     1
-#define REQ     0
+#define REQ     4
 
 // Time related defines
 #define F_CPU               2400000ULL   /* 9.6 MHz / 4 */
@@ -50,6 +50,14 @@
 #define OVF_CNT_OFF_PRESS   T_OFF_PRESS_MS * OVF_FACTOR
 #define OVF_CNT_OFF_WAIT    T_OFF_WAIT_MS * OVF_FACTOR
 
+// Counters
+struct Count_Overflows {
+    uint8_t debounce;       // Time between switch samples
+    uint16_t led_flash;   // Time between LED flashes
+    uint16_t off_press;   // Time sw is held down for OFF press
+    uint16_t off_wait;    // Time to remain powered after !ACK
+};
+
 // Power states
 typedef enum {
     OFF,
@@ -59,10 +67,22 @@ typedef enum {
     STOP_WAIT
 } power_fsm_t;
 
+// Switch definitions
 #define SW_CLOSED           0x00U       /* Closed switch is LOW */
 #define SW_OPEN             0xFFU       /* Open switch is HIGH */
 
+// LED
+typedef enum {
+    UP,
+    DOWN
+} led_dir_t;
+
 // Functions
 static inline void setup(void);
+void update_fsm(power_fsm_t *fsm_state, const struct Count_Overflows *p_cnt_ovf, const bool sw_pressed);
+void update_counters(const power_fsm_t *fsm_state, struct Count_Overflows *p_cnt_ovf, const bool sw_pressed);
+void update_outputs(const power_fsm_t *fsm_state, const struct Count_Overflows *p_cnt_ovf);
+void pulse_led_update(const struct Count_Overflows *p_cnt_ovf);
+
 
 #endif /* AUDIOSTICK_H_ */
