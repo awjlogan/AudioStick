@@ -54,7 +54,7 @@ add: dtoverlay=hifiberry-dac
 
 ### PCB
 
-The PCB was designed using [EAGLE][eagle-web] v9. The *.pcb* and *.sch* files are provided, along with a small library of parts (*AudioStick.lbr*). A full bill of materials is provided as an *.ods* file.
+The PCB was designed using [EAGLE][eagle-web] v9. The *.brd* and *.sch* files are provided, along with a small library of parts (*AudioStick.lbr*). A full bill of materials is provided as an *.ods* file.
 
 ### Firmware and flashing the ATtiny13A
 
@@ -66,11 +66,17 @@ The header **J1** on the PCB is a standard Microchip \[Atmel\] 6 pin programming
 
 `> /firmware/make flash`
 
-## Version 3 Notes
+## Change Notes
 
- - I will be moving to KiCad 5 for PCB design
- - I will be moving from the ATtiny13A to the ATtiny202
- - The physical layout will be significantly changed, and I hope to produce a custom case for it.
+### Version 2.1
+
+ - [x] -MECH- Replace the very small tactile switch with a larger one
+ - [x] -MECH- Mirror RasPi so connectors face Audiostick board
+ - [x] -ELEC- Move LED
+
+### Version 2.0
+
+Finalised release PCB, firmware, and RasPi software.
 
 ## Datasheets and useful links
 
