@@ -40,10 +40,10 @@
 #define PRESCALE            8ULL
 #define OVF_FACTOR          (F_CPU) / (256ULL * PRESCALE * 1000ULL)
 
-#define T_DEBOUNCE_MS       8ULL         /* Period to check for debouncing */
+#define T_DEBOUNCE_MS       4ULL         /* Period to check for debouncing */
 #define T_LED_FLASH_MS      500ULL       /* 1/2 Period of LED flash */
 #define T_OFF_PRESS_MS      1000ULL      /* Delay to recognise press to turn off */
-#define T_OFF_WAIT_MS       10000ULL     /* Time to remain powered on after !ACK */
+#define T_OFF_WAIT_MS       5000ULL      /* Time to remain powered on after !ACK */
 
 #define OVF_CNT_DEBOUNCE    T_DEBOUNCE_MS * OVF_FACTOR
 #define OVF_CNT_LED_FLASH   T_LED_FLASH_MS * OVF_FACTOR
@@ -71,17 +71,12 @@ typedef enum {
 #define SW_CLOSED           0x00U       /* Closed switch is LOW */
 #define SW_OPEN             0xFFU       /* Open switch is HIGH */
 
-// LED
-typedef enum {
-    UP,
-    DOWN
-} led_dir_t;
-
 // Functions
 static inline void setup(void);
-void update_fsm(power_fsm_t *fsm_state, const struct Count_Overflows *p_cnt_ovf, const bool sw_pressed);
-void update_counters(const power_fsm_t *fsm_state, struct Count_Overflows *p_cnt_ovf, const bool sw_pressed);
-void update_outputs(const power_fsm_t *fsm_state, const struct Count_Overflows *p_cnt_ovf);
+void update_sw(const struct Count_Overflows *p_cnt_ovf, bool *sw_pressed);
+void update_fsm(power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ovf, const bool *p_sw_pressed);
+void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_cnt_ovf, const bool *p_sw_pressed);
+void update_outputs(const power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ovf);
 void pulse_led_update(const struct Count_Overflows *p_cnt_ovf);
 
 

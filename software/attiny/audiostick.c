@@ -62,20 +62,16 @@ int main(void)
 {
 
     // Power FSM
-    power_fsm_t fsm_state = START;          // Boot at plugin
-    power_fsm_t fsm_state_nxt = START;
-
+    power_fsm_t fsm_state = OFF;          // Start in OFF, stops wakeup on power cut etc
     power_fsm_t *p_fsm_state;
     p_fsm_state = &fsm_state;
 
-    uint8_t portb_tmp;                      // Reduce R-M-W cycles
-
     // Switch debouncing
     bool sw_pressed = false;
-    uint8_t sw_debounce = SW_OPEN;
+    bool *p_sw_pressed;
+    p_sw_pressed = &sw_pressed;
 
     // Timed event counters
-
     struct Count_Overflows cnt_ovf;
     struct Count_Overflows *p_cnt_ovf;
 
@@ -90,56 +86,10 @@ int main(void)
     /* Forever */
     for (;;) {
 
-        // Every T_DEBOUNCE_MS, check switch
-        if (cnt_ovf.debounce > OVF_CNT_DEBOUNCE) {
-
-            // Shift left, and add switch input (open == HIGH)
-            sw_debounce = sw_debounce << 1;
-            if (PINB & (0x1U << SW)) {
-                sw_debounce++;
-            }
-
-            if (sw_debounce == SW_CLOSED) {
-                sw_pressed = true;
-            } else if (sw_debounce == SW_OPEN) {
-                sw_pressed = false;
-            }
-        }
-
-        update_counters(p_fsm_state, p_cnt_ovf, sw_pressed);
-        update_fsm(p_fsm_state, p_cnt_ovf, sw_pressed);
+        update_sw(p_cnt_ovf, p_sw_pressed);
+        update_counters(p_fsm_state, p_cnt_ovf, p_sw_pressed);
+        update_fsm(p_fsm_state, p_cnt_ovf, p_sw_pressed);
         update_outputs(p_fsm_state, p_cnt_ovf);
-
-        // Outputs
-        fsm_state = fsm_state_nxt;
-        if (fsm_state == OFF) {
-            // LED and power OFF, REQ low
-            // REVISIT pulse LED
-            PORTB = 0x00U;
-        } else if ((fsm_state == START) || (fsm_state == STOP) || (fsm_state == STOP_WAIT)) {
-            // LED FLASH, power ON
-            portb_tmp = PORTB;
-            portb_tmp |= (0x1U << PWR);
-
-            // REQ is high in START, low in STOP and STOP_WAIT
-            if (fsm_state == START) {
-                portb_tmp |= (0x1U << REQ);
-            } else {
-                portb_tmp &= ~(0x1U << REQ);
-            }
-
-
-            if (cnt_ovf.led_flash > OVF_CNT_LED_FLASH) {
-                pulse_led_update();
-                portb_tmp ^= (0x1U << LED);
-            }
-
-            PORTB = portb_tmp;
-
-        } else if (fsm_state == ON) {
-            // LED and power ON, REQ high
-            PORTB = ((0x1U << LED) | (0x1U << PWR) | (0x1U << REQ));
-        }
 
         // Sleep and wait for TIM0 interrupt
         sleep_enable();
@@ -175,42 +125,63 @@ inline void setup(void) {
     ACSR = (0x1U << ACD);  // analog comparator off
 }
 
-void update_fsm(power_fsm_t *fsm_state, const struct Count_Overflows *p_cnt_ovf, const bool sw_pressed) {
+void update_sw(const struct Count_Overflows *p_cnt_ovf, bool *p_sw_pressed) {
 
-    switch (*fsm_state) {
+    static uint8_t sw_debounce = SW_OPEN;
+
+    if (p_cnt_ovf->debounce > OVF_CNT_DEBOUNCE) {
+
+        // Shift left, and add switch input (open == HIGH)
+        sw_debounce = sw_debounce << 1;
+        if (PINB & (0x1U << SW)) {
+            sw_debounce++;
+        }
+
+        if (sw_debounce == SW_CLOSED) {
+            *p_sw_pressed = true;
+        } else if (sw_debounce == SW_OPEN) {
+            *p_sw_pressed = false;
+        }
+    }
+}
+
+void update_fsm(power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ovf, const bool *p_sw_pressed) {
+
+    switch (*p_fsm_state) {
         case OFF:
-            *fsm_state = sw_pressed ? START : OFF;
+            *p_fsm_state = *p_sw_pressed ? START : OFF;
             break;
         case START:
-            *fsm_state = (PINB & (0x1U << ACK)) ? ON : START;
+            *p_fsm_state = (PINB & (0x1U << ACK)) ? ON : START;
             break;
         case ON:
             // Button must be pressed and held
-            *fsm_state = (p_cnt_ovf->off_press > OVF_CNT_OFF_PRESS) ? STOP : ON;
+            *p_fsm_state = (p_cnt_ovf->off_press > OVF_CNT_OFF_PRESS) ? STOP : ON;
             break;
         case STOP:
-            *fsm_state = (!(PINB & (0x1U << ACK))) ? STOP_WAIT : STOP;
+            *p_fsm_state = (!(PINB & (0x1U << ACK))) ? STOP_WAIT : STOP;
             break;
         case STOP_WAIT:
             // Wait for OVF_CNT_OFF_WAIT cycles before removing power
-            *fsm_state = (p_cnt_ovf->off_wait > OVF_CNT_OFF_WAIT) ? OFF : STOP_WAIT;
+            *p_fsm_state = (p_cnt_ovf->off_wait > OVF_CNT_OFF_WAIT) ? OFF : STOP_WAIT;
             break;
         default:
             break;
     }
     return;
-
 }
 
-void update_counters(const power_fsm_t *fsm_state, struct Count_Overflows *p_cnt_ovf, const bool sw_pressed) {
+void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_cnt_ovf, const bool *p_sw_pressed) {
 
+    // Update debounce counter in all states
     if (p_cnt_ovf->debounce > OVF_CNT_DEBOUNCE) {
         p_cnt_ovf->debounce = 0x00U;
     } else {
         p_cnt_ovf->debounce++;
     }
 
-    switch (*fsm_state) {
+    switch (*p_fsm_state) {
+        
         case OFF:
 
             // Reset wait for OFF counter
@@ -219,7 +190,7 @@ void update_counters(const power_fsm_t *fsm_state, struct Count_Overflows *p_cnt
         case ON:
 
             // Switch must be pressed and held
-            if (sw_pressed) {
+            if (*p_sw_pressed) {
                 p_cnt_ovf->off_press++;
             } else {
                 p_cnt_ovf->off_press = 0x0000U;
@@ -227,12 +198,26 @@ void update_counters(const power_fsm_t *fsm_state, struct Count_Overflows *p_cnt
             break;
 
         case START:
+            
             if (p_cnt_ovf->led_flash > OVF_CNT_LED_FLASH) {
                 p_cnt_ovf->led_flash = 0x0000U;
             } else {
                 p_cnt_ovf->led_flash++;
             }
             break;
+
+        case STOP:
+            
+            if (p_cnt_ovf->led_flash > OVF_CNT_LED_FLASH) {
+                p_cnt_ovf->led_flash = 0x0000U;
+            } else {
+                p_cnt_ovf->led_flash++;
+            }
+
+            // Reset button press for OFF counter
+            p_cnt_ovf->off_press = 0x0000U;
+            break;
+
         case STOP_WAIT:
 
             p_cnt_ovf->off_wait++;
@@ -243,15 +228,48 @@ void update_counters(const power_fsm_t *fsm_state, struct Count_Overflows *p_cnt
                 p_cnt_ovf->led_flash++;
             }
             break;
-        case STOP:
-            if (p_cnt_ovf->led_flash > OVF_CNT_LED_FLASH) {
-                p_cnt_ovf->led_flash = 0x0000U;
-            } else {
-                p_cnt_ovf->led_flash++;
-            }
 
-            // Reset button press for OFF counter
-            p_cnt_ovf->off_press = 0x0000U;
+        default:
+            break;
+    }
+    return;
+}
+
+void update_outputs(const power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ovf) {
+
+    switch (*p_fsm_state) {
+        case OFF:
+
+            // Everything OFF
+            PORTB = 0x00U;
+            // Disable LED PWM
+            TCCR0A = (0x1U << WGM01) | (0x1U << WGM00);
+            break;
+
+        case START:
+            
+            PORTB |= (0x1U << PWR) | (0x1U << REQ);
+            pulse_led_update(p_cnt_ovf);
+            break;
+
+        case ON:
+            
+            // Only route is START->ON, just turn on LED
+            PORTB |= (0x1U << LED);
+            // Disable LED PWM
+            TCCR0A = (0x1U << WGM01) | (0x1U << WGM00);
+            break;
+
+        case STOP:
+            
+            PORTB &= ~(0x1U << REQ);
+            pulse_led_update(p_cnt_ovf);
+            break;
+
+        case STOP_WAIT:
+            
+            pulse_led_update(p_cnt_ovf);
+            break;
 
         default:
             break;
@@ -262,70 +280,17 @@ void update_counters(const power_fsm_t *fsm_state, struct Count_Overflows *p_cnt
 void pulse_led_update(const struct Count_Overflows *p_cnt_ovf) {
 
     // LED PWM values
-    const uint8_t pwm_values[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-    static uint8_t pwm_position = 0x0U;
-    static led_dir_t direction = UP;
+    const uint8_t pwm_values[16] = {0, 2, 4, 16, 32, 64, 128, 255, 255, 128, 64, 32, 16, 4, 2, 0};
+    static uint8_t pwm_position = 0x00U;
 
-    if (cnt_ovf->led_flash > OVF_CNT_LED_FLASH) {
+    // Enable the compare-match output on OCOA
 
-                // Increment/decrement value counter
-                if (direction == UP) {
-                    pwm_position++;
-                    if (pwm_position == 7) {
-                        direction = DOWN;
-                    }
-                } else {
-                    pwm_position--;
-                    if (pwm_position == 0) {
-                        direction = UP;
-                    }
-                }
-
-
-            }
-}
-
-void update_outputs(const power_fsm_t *fsm_state, const struct Count_Overflows *p_cnt_ovf) {
-
-
-    switch (*fsm_state) {
-        case OFF:
-            // Everything OFF
-            PORTB = 0x00U;
-            break;
-        case START:
-
-
+    if (p_cnt_ovf->led_flash > OVF_CNT_LED_FLASH) {
+        
+        // Fast PWM, output on OCOA
+        TCCR0A = (0x1U << COM0A1) | (0x1U << WGM01) | (0x1U << WGM00);
+        
+        // Set PWM value
+        OCR0A = pwm_values[pwm_position++ & 0x0FU];
     }
-
-    if (*fsm_state == OFF) {
-            // LED and power OFF, REQ low
-        PORTB = 0x00U;
-    } else if ((*fsm_state == START) || (*fsm_state == STOP) || (*fsm_state == STOP_WAIT)) {
-        // In these modes, the LED will be pulsing, controlled by TCCR0A
-
-        // power ON
-        portb_tmp = PORTB;
-        portb_tmp |= (0x1U << PWR);
-
-        // REQ is high in START, low in STOP and STOP_WAIT
-        if (*fsm_state == START) {
-            portb_tmp |= (0x1U << REQ);
-        } else {
-            portb_tmp &= ~(0x1U << REQ);
-        }
-
-
-        if (cnt_ovf->led_flash > OVF_CNT_LED_FLASH) {
-            pulse_led_update();
-            portb_tmp ^= (0x1U << LED);
-        }
-
-        PORTB = portb_tmp;
-
-    } else if (fsm_state == ON) {
-        // LED and power ON, REQ high
-        PORTB = ((0x1U << LED) | (0x1U << PWR) | (0x1U << REQ));
-    }
-
 }
