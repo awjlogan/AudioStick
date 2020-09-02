@@ -3,7 +3,8 @@ MCU=attiny13a
 CC			= avr-gcc
 OBJCOPY 	= avr-objcopy
 SIZE 		= avr-size
-CFLAGS 		= -std=c99 -Wall -g -Werror=switch -pedantic -O2 --short-enums -mmcu=${MCU} -I.
+OPT			= O2
+CFLAGS 		= -std=c99 -Wall -g -Werror=switch -pedantic --short-enums -I.
 TARGET 		= audiostick
 SRCS 		= audiostick.c
 MCU_FLASH 	= attiny13
@@ -15,7 +16,7 @@ all:
 	@echo ----------------------------------
 	@echo
 
-	${CC} ${CFLAGS} -o ${TARGET}.elf ${SRCS}
+	${CC} ${CFLAGS} -${OPT} -mmcu=${MCU} -o ${TARGET}.elf ${SRCS}
 	${OBJCOPY} -j .text -j .data -O ihex ${TARGET}.elf ${TARGET}.hex
 	${SIZE} --format=avr --mcu=${MCU} ${TARGET}.elf
 

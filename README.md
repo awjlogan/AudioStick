@@ -36,14 +36,12 @@ When it is complete, you will need to shutdown and then remove the power before 
 The AudioStick is intended to be used with something like MPD to allow you to connect up to any speaker (with amplifier) and get access to your local music or streaming services controlled by your phone. There are a lot of good tutorials (REVISIT add some links) available, so I won't reiterate the points here, but here are a few additional things that might be useful:
 
  - Change the Raspberry Pi's hostname to a meaningful name, for example `livingroompi`. This will also allow you to have multiple AudioSticks on the same network.
-
  - Configure your NAS (or whatever storage) to mount at boot time in `/etc/fstab`. Be aware that the system might attempt to mount the device before the network is available.
-
  - Disable the swap file to increase the SD card's life (`sudo apt remove dphys-swapfile`)
 
 Setting up audiostick
 
-Setup for PCM5102:
+Setup for PCM510x:
 Configure overlay: /boot/config.txt
 uncomment: dtparam=i2s=on
 comment: #dtparam=audio=on
@@ -70,9 +68,11 @@ The header **J1** on the PCB is a standard Microchip \[Atmel\] 6 pin programming
 
 ### Version 2.1
 
- - [x] -MECH- Replace the very small tactile switch with a larger one
- - [x] -MECH- Mirror RasPi so connectors face Audiostick board
- - [x] -ELEC- Move LED
+ - [x] -MECH- Replace Panasonic EVQ tactile switch with larger Omron 3100 series.
+ - [x] -MECH- Mirror RasPi so connectors face Audiostick board.
+ - [x] -ELEC- Move LED to PWM output pin for more interesting effects (chicken transistor in case programmer can't drive pin with LED).
+ - [x] -ELEC- Remove MOSFET power switch for RasPi. Use inrush inhibitor instead.
+ - [x] -ELEC- Downsize RasPi power capacitor.
 
 ### Version 2.0
 
@@ -80,8 +80,8 @@ Finalised release PCB, firmware, and RasPi software.
 
 ## Datasheets and useful links
 
-- [PCM5102 DAC datasheet][pcm5102-datasheet]
-- [ATtiny13A datasheet][attiny13-datasheet]
+- [PCM5102 DAC][pcm5102-datasheet]
+- [ATtiny13A][attiny13-datasheet]
 
 [dbad-github]: https://github.com/philsturgeon/dbad
 [eagle-web]: https://www.autodesk.com/products/eagle/overview
