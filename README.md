@@ -68,7 +68,6 @@ The header **J1** on the PCB is a standard Microchip \[Atmel\] 6 pin programming
 
 ### Version 2.1
 
- - [x] -MECH- Replace Panasonic EVQ tactile switch with larger Omron 3100 series.
  - [x] -MECH- Mirror RasPi so connectors face Audiostick board.
  - [x] -ELEC- Move LED to PWM output pin for more interesting effects (chicken transistor in case programmer can't drive pin with LED).
  - [x] -ELEC- Remove MOSFET power switch for RasPi. Use inrush inhibitor instead.
