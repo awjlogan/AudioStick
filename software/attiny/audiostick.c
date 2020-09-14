@@ -153,6 +153,7 @@ void update_fsm(power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ov
             break;
         case START:
             *p_fsm_state = (PINB & (0x1U << ACK)) ? ON : START;
+            *p_fsm_state = (p_cnt_ovf->err_wait > OVF_CNT_ERROR) ? ERROR : *p_fsm_state;
             break;
         case ON:
             // Button must be pressed and held
@@ -160,11 +161,15 @@ void update_fsm(power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ov
             break;
         case STOP:
             *p_fsm_state = (!(PINB & (0x1U << ACK))) ? STOP_WAIT : STOP;
+            *p_fsm_state = (p_cnt_ovf->err_wait > OVF_CNT_ERROR) ? ERROR : *p_fsm_state;
             break;
         case STOP_WAIT:
             // Wait for OVF_CNT_OFF_WAIT cycles before removing power
             *p_fsm_state = (p_cnt_ovf->off_wait > OVF_CNT_OFF_WAIT) ? OFF : STOP_WAIT;
             break;
+        case ERROR:
+            // Button must be held 4X off_press to reset to OFF
+            *p_fsm_state = (p_cnt_ovf->off_press > 4 * OVF_CNT_OFF_PRESS) ? OFF : ERROR;
         default:
             break;
     }
@@ -181,13 +186,15 @@ void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_c
     }
 
     switch (*p_fsm_state) {
-        
+
         case OFF:
 
             // Reset wait for OFF counter
             p_cnt_ovf->off_wait = 0x0000U;
 
         case ON:
+
+            p_cnt_ovf->err_wait = 0x0000U;
 
             // Switch must be pressed and held
             if (*p_sw_pressed) {
@@ -198,7 +205,9 @@ void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_c
             break;
 
         case START:
-            
+
+            p_cnt_ovf->err_wait++;
+
             if (p_cnt_ovf->led_flash > OVF_CNT_LED_FLASH) {
                 p_cnt_ovf->led_flash = 0x0000U;
             } else {
@@ -207,7 +216,9 @@ void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_c
             break;
 
         case STOP:
-            
+
+            p_cnt_ovf->err_wait++;
+
             if (p_cnt_ovf->led_flash > OVF_CNT_LED_FLASH) {
                 p_cnt_ovf->led_flash = 0x0000U;
             } else {
@@ -220,6 +231,8 @@ void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_c
 
         case STOP_WAIT:
 
+            p_cnt_ovf->err_wait = 0x0000U;
+
             p_cnt_ovf->off_wait++;
 
             if (p_cnt_ovf->led_flash > OVF_CNT_LED_FLASH) {
@@ -228,6 +241,16 @@ void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_c
                 p_cnt_ovf->led_flash++;
             }
             break;
+
+        case ERROR:
+
+            p_cnt_ovf->err_wait = 0x0000U;
+
+            if (*p_sw_pressed) {
+                p_cnt_ovf->off_press++;
+            } else {
+                p_cnt_ovf->off_press = 0x0000U;
+            }
 
         default:
             break;
@@ -247,13 +270,13 @@ void update_outputs(const power_fsm_t *p_fsm_state, const struct Count_Overflows
             break;
 
         case START:
-            
+
             PORTB |= (0x1U << PWR) | (0x1U << REQ);
             pulse_led_update(p_cnt_ovf);
             break;
 
         case ON:
-            
+
             // Only route is START->ON, just turn on LED
             PORTB |= (0x1U << LED);
             // Disable LED PWM
@@ -261,14 +284,20 @@ void update_outputs(const power_fsm_t *p_fsm_state, const struct Count_Overflows
             break;
 
         case STOP:
-            
+
             PORTB &= ~(0x1U << REQ);
             pulse_led_update(p_cnt_ovf);
             break;
 
         case STOP_WAIT:
-            
+
             pulse_led_update(p_cnt_ovf);
+            break;
+
+        case ERROR:
+
+            TCCR0A = (0x1U << WGM01) | (0x1U << WGM00);
+            // REVISIT flash LED
             break;
 
         default:
@@ -284,13 +313,11 @@ void pulse_led_update(const struct Count_Overflows *p_cnt_ovf) {
     static uint8_t pwm_position = 0x00U;
 
     // Enable the compare-match output on OCOA
+    // Fast PWM, output on OCOA
+    TCCR0A = (0x1U << COM0A1) | (0x1U << WGM01) | (0x1U << WGM00);
 
+    // Set PWM value
     if (p_cnt_ovf->led_flash > OVF_CNT_LED_FLASH) {
-        
-        // Fast PWM, output on OCOA
-        TCCR0A = (0x1U << COM0A1) | (0x1U << WGM01) | (0x1U << WGM00);
-        
-        // Set PWM value
         OCR0A = pwm_values[pwm_position++ & 0x0FU];
     }
 }
