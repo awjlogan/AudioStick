@@ -56,49 +56,7 @@
 // ISRs
 EMPTY_INTERRUPT (TIM0_OVF_vect)             // Timer0 overflow just wakes up
 
-
-// Main program
-int main(void)
-{
-
-    // Power FSM
-    power_fsm_t fsm_state = OFF;          // Start in OFF, stops wakeup on power cut etc
-    power_fsm_t *p_fsm_state;
-    p_fsm_state = &fsm_state;
-
-    // Switch debouncing
-    bool sw_pressed = false;
-    bool *p_sw_pressed;
-    p_sw_pressed = &sw_pressed;
-
-    // Timed event counters
-    struct Count_Overflows cnt_ovf;
-    struct Count_Overflows *p_cnt_ovf;
-
-    cnt_ovf.debounce = 0x00U;
-    cnt_ovf.led_flash = 0x0000U;
-    cnt_ovf.off_press = 0x0000U;
-    cnt_ovf.off_wait = 0x0000U;
-    p_cnt_ovf = &cnt_ovf;
-
-    setup();
-
-    /* Forever */
-    for (;;) {
-
-        update_sw(p_cnt_ovf, p_sw_pressed);
-        update_counters(p_fsm_state, p_cnt_ovf, p_sw_pressed);
-        update_fsm(p_fsm_state, p_cnt_ovf, p_sw_pressed);
-        update_outputs(p_fsm_state, p_cnt_ovf);
-
-        // Sleep and wait for TIM0 interrupt
-        sleep_enable();
-        sleep_cpu();
-        sleep_disable();
-    }
-}
-
-inline void setup(void) {
+static inline void setup_avr(void) {
     /*  Clocking
         F_CPU = 9.6 MHz / 4 = 2.4 MHz
         Set top bit 1 and then write within 4 cycles
@@ -125,7 +83,7 @@ inline void setup(void) {
     ACSR = (0x1U << ACD);  // analog comparator off
 }
 
-void update_sw(const struct Count_Overflows *p_cnt_ovf, bool *p_sw_pressed) {
+static inline void update_sw(const struct Count_Overflows *p_cnt_ovf, bool *p_sw_pressed) {
 
     static uint8_t sw_debounce = SW_OPEN;
 
@@ -145,7 +103,7 @@ void update_sw(const struct Count_Overflows *p_cnt_ovf, bool *p_sw_pressed) {
     }
 }
 
-void update_fsm(power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ovf, const bool *p_sw_pressed) {
+static inline void update_fsm(power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ovf, const bool *p_sw_pressed) {
 
     switch (*p_fsm_state) {
         case OFF:
@@ -258,7 +216,23 @@ void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_c
     return;
 }
 
-void update_outputs(const power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ovf) {
+void pulse_led_update(const struct Count_Overflows *p_cnt_ovf) {
+
+    // LED PWM values
+    const uint8_t pwm_values[16] = {0, 2, 4, 16, 32, 64, 128, 255, 255, 128, 64, 32, 16, 4, 2, 0};
+    static uint8_t pwm_position = 0x00U;
+
+    // Enable the compare-match output on OCOA
+    // Fast PWM, output on OCOA
+    TCCR0A = (0x1U << COM0A1) | (0x1U << WGM01) | (0x1U << WGM00);
+
+    // Set PWM value
+    if (p_cnt_ovf->led_flash > OVF_CNT_LED_FLASH) {
+        OCR0A = pwm_values[pwm_position++ & 0x0FU];
+    }
+}
+
+static inline void update_outputs(const power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ovf) {
 
     switch (*p_fsm_state) {
         case OFF:
@@ -306,18 +280,30 @@ void update_outputs(const power_fsm_t *p_fsm_state, const struct Count_Overflows
     return;
 }
 
-void pulse_led_update(const struct Count_Overflows *p_cnt_ovf) {
 
-    // LED PWM values
-    const uint8_t pwm_values[16] = {0, 2, 4, 16, 32, 64, 128, 255, 255, 128, 64, 32, 16, 4, 2, 0};
-    static uint8_t pwm_position = 0x00U;
 
-    // Enable the compare-match output on OCOA
-    // Fast PWM, output on OCOA
-    TCCR0A = (0x1U << COM0A1) | (0x1U << WGM01) | (0x1U << WGM00);
+// Main program
+int main(void)
+{
 
-    // Set PWM value
-    if (p_cnt_ovf->led_flash > OVF_CNT_LED_FLASH) {
-        OCR0A = pwm_values[pwm_position++ & 0x0FU];
+    power_fsm_t fsm_state = OFF;          // Start in OFF, stops wakeup on power cut etc
+    bool sw_pressed = false;
+    struct Count_Overflows cnt_ovf = {0}; // Init all counters to 0
+
+    setup_avr();
+
+    /* Forever */
+    for (;;) {
+
+        update_sw(&cnt_ovf, &sw_pressed);
+        update_counters(&fsm_state, &cnt_ovf, &sw_pressed);
+        update_fsm(&fsm_state, &cnt_ovf, &sw_pressed);
+        update_outputs(&fsm_state, &cnt_ovf);
+
+        // Sleep and wait for TIM0 interrupt
+        sleep_enable();
+        sleep_cpu();
+        sleep_disable();
     }
 }
+

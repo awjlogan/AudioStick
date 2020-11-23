@@ -75,13 +75,4 @@ typedef enum {
 #define SW_CLOSED           0x00U       /* Closed switch is LOW */
 #define SW_OPEN             0xFFU       /* Open switch is HIGH */
 
-// Functions
-static inline void setup(void);
-void update_sw(const struct Count_Overflows *p_cnt_ovf, bool *sw_pressed);
-void update_fsm(power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ovf, const bool *p_sw_pressed);
-void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_cnt_ovf, const bool *p_sw_pressed);
-void update_outputs(const power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ovf);
-void pulse_led_update(const struct Count_Overflows *p_cnt_ovf);
-
-
 #endif /* AUDIOSTICK_H_ */
