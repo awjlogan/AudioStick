@@ -1,4 +1,4 @@
-#!/bin bash
+#!/bin/bash
 
 if [ "$(id -u)" != "0" ]; then
 	echo "You need to run under sudo. Exiting."

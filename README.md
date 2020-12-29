@@ -13,9 +13,9 @@ All design files and source code are under the [_Don't Be A Dick_][dbad-github] 
 From a clean installation of Raspbian, log in to your Raspberry Pi and run the following 3 lines:
 
 ```shell
-> git clone https://github.com/awjlogan/audiostick/audiostick.git
+> git clone https://github.com/awjlogan/audiostick.git
 > cd ./audiostick
-> sudo audiostick_setup.sh
+> sudo ./audiostick_setup.sh
 ```
 
 The `audiostick_setup.sh` script will:
