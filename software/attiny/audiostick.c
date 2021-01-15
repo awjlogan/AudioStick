@@ -103,28 +103,32 @@ static inline void update_sw(const struct Count_Overflows *p_cnt_ovf, bool *p_sw
     }
 }
 
-static inline void update_fsm(power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ovf, const bool *p_sw_pressed) {
+static inline void update_fsm(power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ovf, bool sw_pressed) {
 
     switch (*p_fsm_state) {
         case OFF:
-            *p_fsm_state = *p_sw_pressed ? START : OFF;
+
+            *p_fsm_state = sw_pressed ? START : OFF;
             break;
+
         case START:
+
             *p_fsm_state = (PINB & (0x1U << ACK)) ? ON : START;
             *p_fsm_state = (p_cnt_ovf->err_wait > OVF_CNT_ERROR) ? ERROR : *p_fsm_state;
             break;
+
         case ON:
+
             // Button must be pressed and held
             *p_fsm_state = (p_cnt_ovf->off_press > OVF_CNT_OFF_PRESS) ? STOP : ON;
             break;
+
         case STOP:
-            *p_fsm_state = (!(PINB & (0x1U << ACK))) ? STOP_WAIT : STOP;
+
+            *p_fsm_state = (!(PINB & (0x1U << ACK))) ? OFF : STOP;
             *p_fsm_state = (p_cnt_ovf->err_wait > OVF_CNT_ERROR) ? ERROR : *p_fsm_state;
             break;
-        case STOP_WAIT:
-            // Wait for OVF_CNT_OFF_WAIT cycles before removing power
-            *p_fsm_state = (p_cnt_ovf->off_wait > OVF_CNT_OFF_WAIT) ? OFF : STOP_WAIT;
-            break;
+
         case ERROR:
             // Button must be held 4X off_press to reset to OFF
             *p_fsm_state = (p_cnt_ovf->off_press > 4 * OVF_CNT_OFF_PRESS) ? OFF : ERROR;
@@ -147,8 +151,7 @@ void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_c
 
         case OFF:
 
-            // Reset wait for OFF counter
-            p_cnt_ovf->off_wait = 0x0000U;
+            break;
 
         case ON:
 
@@ -185,19 +188,6 @@ void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_c
 
             // Reset button press for OFF counter
             p_cnt_ovf->off_press = 0x0000U;
-            break;
-
-        case STOP_WAIT:
-
-            p_cnt_ovf->err_wait = 0x0000U;
-
-            p_cnt_ovf->off_wait++;
-
-            if (p_cnt_ovf->led_flash > OVF_CNT_LED_FLASH) {
-                p_cnt_ovf->led_flash = 0x0000U;
-            } else {
-                p_cnt_ovf->led_flash++;
-            }
             break;
 
         case ERROR:
@@ -263,11 +253,6 @@ static inline void update_outputs(const power_fsm_t *p_fsm_state, const struct C
             pulse_led_update(p_cnt_ovf);
             break;
 
-        case STOP_WAIT:
-
-            pulse_led_update(p_cnt_ovf);
-            break;
-
         case ERROR:
 
             TCCR0A = (0x1U << WGM01) | (0x1U << WGM00);
@@ -297,7 +282,7 @@ int main(void)
 
         update_sw(&cnt_ovf, &sw_pressed);
         update_counters(&fsm_state, &cnt_ovf, &sw_pressed);
-        update_fsm(&fsm_state, &cnt_ovf, &sw_pressed);
+        update_fsm(&fsm_state, &cnt_ovf, sw_pressed);
         update_outputs(&fsm_state, &cnt_ovf);
 
         // Sleep and wait for TIM0 interrupt

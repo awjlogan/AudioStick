@@ -43,7 +43,6 @@
 #define T_DEBOUNCE_MS       4ULL         /* Period to check for debouncing */
 #define T_LED_FLASH_MS      500ULL       /* 1/2 Period of LED flash */
 #define T_OFF_PRESS_MS      1000ULL      /* Delay to recognise press to turn off */
-#define T_OFF_WAIT_MS       5000ULL      /* Time to remain powered on after !ACK */
 #define T_ERROR_MS          60000ULL     /* If delay is longer, go to error */
 
 #define OVF_CNT_DEBOUNCE    T_DEBOUNCE_MS * OVF_FACTOR
@@ -57,7 +56,6 @@ struct Count_Overflows {
     uint8_t debounce;     // Time between switch samples
     uint16_t led_flash;   // Time between LED flashes
     uint16_t off_press;   // Time sw is held down for OFF press
-    uint16_t off_wait;    // Time to remain powered after !ACK
     uint16_t err_wait;    // Time to remain active until error
 };
 
