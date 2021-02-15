@@ -8,14 +8,14 @@ fi
 echo "Setting up AudioStick requirements."
 
 apt install -y git mpd avahi-daemon
-AUDIOSTICKDIR="audiostick/software/raspi"
+AUDIOSTICKDIR="./software/raspi"
 
 echo "Backing up /boot/config.txt to ~/"
 cp -v /boot/config.txt ~/config.txt_back
 
 echo -n "Patching /boot/config.txt ..."
 OVERLAY="dtoverlay=hifiberry-dac"
-if grep -Fxq /boot/config.txt $OVERLAY
+if grep -Fxq $OVERLAY /boot/config.txt
 then
 	echo "DAC's overlay already present. Skipping."
 else
@@ -28,7 +28,7 @@ ASOUND_F="/etc/asound.conf"
 if [ -f $ASOUND_F ]; then
 	echo "$ASOUND_F already exists. Skipping."
 else
-	cp -fv ./asound.conf $ASOUND_F
+	cp -fv $AUDIOSTICKDIR/asound.conf $ASOUND_F
 fi
 
 echo "Setting up power management service..."

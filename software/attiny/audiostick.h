@@ -41,12 +41,12 @@
 #define OVF_FACTOR          (F_CPU) / (256ULL * PRESCALE * 1000ULL)
 
 #define T_DEBOUNCE_MS       4ULL         /* Period to check for debouncing */
-#define T_LED_FLASH_MS      500ULL       /* 1/2 Period of LED flash */
+#define T_LED_PULSE_MS      120ULL       /* Next step in PWM pulse */
 #define T_OFF_PRESS_MS      1000ULL      /* Delay to recognise press to turn off */
 #define T_ERROR_MS          60000ULL     /* If delay is longer, go to error */
 
 #define OVF_CNT_DEBOUNCE    T_DEBOUNCE_MS * OVF_FACTOR
-#define OVF_CNT_LED_FLASH   T_LED_FLASH_MS * OVF_FACTOR
+#define OVF_CNT_LED_PULSE   T_LED_PULSE_MS * OVF_FACTOR
 #define OVF_CNT_OFF_PRESS   T_OFF_PRESS_MS * OVF_FACTOR
 #define OVF_CNT_OFF_WAIT    T_OFF_WAIT_MS * OVF_FACTOR
 #define OVF_CNT_ERROR       T_ERROR_MS * OVF_FACTOR

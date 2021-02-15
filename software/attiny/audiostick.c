@@ -130,8 +130,9 @@ static inline void update_fsm(power_fsm_t *p_fsm_state, const struct Count_Overf
             break;
 
         case ERROR:
-            // Button must be held 4X off_press to reset to OFF
-            *p_fsm_state = (p_cnt_ovf->off_press > 4 * OVF_CNT_OFF_PRESS) ? OFF : ERROR;
+
+            // Button must be held 3X off_press to reset to OFF
+            *p_fsm_state = (p_cnt_ovf->off_press > 3 * OVF_CNT_OFF_PRESS) ? OFF : ERROR;
         default:
             break;
     }
@@ -151,6 +152,7 @@ void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_c
 
         case OFF:
 
+            p_cnt_ovf->off_press = 0x0000U;
             break;
 
         case ON:
@@ -169,7 +171,7 @@ void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_c
 
             p_cnt_ovf->err_wait++;
 
-            if (p_cnt_ovf->led_flash > OVF_CNT_LED_FLASH) {
+            if (p_cnt_ovf->led_flash > OVF_CNT_LED_PULSE) {
                 p_cnt_ovf->led_flash = 0x0000U;
             } else {
                 p_cnt_ovf->led_flash++;
@@ -180,7 +182,7 @@ void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_c
 
             p_cnt_ovf->err_wait++;
 
-            if (p_cnt_ovf->led_flash > OVF_CNT_LED_FLASH) {
+            if (p_cnt_ovf->led_flash > OVF_CNT_LED_PULSE) {
                 p_cnt_ovf->led_flash = 0x0000U;
             } else {
                 p_cnt_ovf->led_flash++;
@@ -217,7 +219,8 @@ void pulse_led_update(const struct Count_Overflows *p_cnt_ovf) {
     TCCR0A = (0x1U << COM0A1) | (0x1U << WGM01) | (0x1U << WGM00);
 
     // Set PWM value
-    if (p_cnt_ovf->led_flash > OVF_CNT_LED_FLASH) {
+    if (p_cnt_ovf->led_flash > OVF_CNT_LED_PULSE) {
+        // mod 16 overflow
         OCR0A = pwm_values[pwm_position++ & 0x0FU];
     }
 }
@@ -241,10 +244,9 @@ static inline void update_outputs(const power_fsm_t *p_fsm_state, const struct C
 
         case ON:
 
-            // Only route is START->ON, just turn on LED
-            PORTB |= (0x1U << LED);
-            // Disable LED PWM
+            // Disable LED PWM, set ON
             TCCR0A = (0x1U << WGM01) | (0x1U << WGM00);
+            PORTB |= (0x1U << LED);
             break;
 
         case STOP:
