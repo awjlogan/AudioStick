@@ -133,6 +133,7 @@ static inline void update_fsm(power_fsm_t *p_fsm_state, const struct Count_Overf
 
             // Button must be held 3X off_press to reset to OFF
             *p_fsm_state = (p_cnt_ovf->off_press > 3 * OVF_CNT_OFF_PRESS) ? OFF : ERROR;
+
         default:
             break;
     }
@@ -210,9 +211,14 @@ void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_c
 
 void pulse_led_update(const struct Count_Overflows *p_cnt_ovf) {
 
+    static bool cnt_up = true;
+    static uint8_t idx = 0;
+
     // LED PWM values
-    const uint8_t pwm_values[16] = {0, 2, 4, 16, 32, 64, 128, 255, 255, 128, 64, 32, 16, 4, 2, 0};
-    static uint8_t pwm_position = 0x00U;
+    const uint8_t pwm_values[16] = {0, 2, 4, 8,
+                                    16, 24, 32, 40,
+                                    56, 72, 88, 106,
+                                    138, 170, 202, 255};
 
     // Enable the compare-match output on OCOA
     // Fast PWM, output on OCOA
@@ -220,8 +226,21 @@ void pulse_led_update(const struct Count_Overflows *p_cnt_ovf) {
 
     // Set PWM value
     if (p_cnt_ovf->led_flash > OVF_CNT_LED_PULSE) {
-        // mod 16 overflow
-        OCR0A = pwm_values[pwm_position++ & 0x0FU];
+        OCR0A = pwm_values[idx];
+
+        // Generate index into array
+        if (cnt_up) {
+            idx++;
+            if (idx == 15) {
+                cnt_up = false;
+            }
+        } else {
+            idx--;
+            if (idx == 0) {
+                cnt_up = true;
+            }
+        }
+
     }
 }
 
