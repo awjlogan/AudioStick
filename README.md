@@ -60,11 +60,15 @@ The source for the power control microcontroller is provided, and can be compile
 
 `> /firmware/make`
 
-The header **J1** on the PCB is a standard Microchip \[Atmel\] 6 pin programming header. Using your compiled firmware (or the precompiled *.hex* file), you can flash the microcontroller with e.g. an Atmel ICE. To flash the microcontroller, run:
+The header **J4** on the PCB is a standard Microchip \[Atmel\] 6 pin programming header. Using your compiled firmware (or the precompiled *.hex* file), you can flash the microcontroller with e.g. an Atmel ICE. To flash the microcontroller, run:
 
 `> /firmware/make flash`
 
 ## Change Notes
+
+### Version 2.2
+
+ - [x] -ELEC- Change from pogo pads to pin header for AVR ISP.
 
 ### Version 2.1
 
