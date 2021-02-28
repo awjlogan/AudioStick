@@ -1,6 +1,6 @@
 /*
 
-> Copyright (C) 2020 Angus Logan
+> Copyright (C) 2020-21 Angus Logan
 
  Everyone is permitted to copy and distribute verbatim or modified
  copies of this license document.
@@ -36,27 +36,30 @@
 #define REQ     4
 
 // Time related defines
-#define F_CPU               2400000ULL   /* 9.6 MHz / 4 */
+#define F_CPU               2400000ULL  /* 9.6 MHz / 4 */
 #define PRESCALE            8ULL
 #define OVF_FACTOR          (F_CPU) / (256ULL * PRESCALE * 1000ULL)
 
-#define T_DEBOUNCE_MS       4ULL         /* Period to check for debouncing */
+#define T_DEBOUNCE_MS       4ULL        /* Period to check for debouncing */
 #define T_LED_PULSE_MS      90ULL       /* Next step in PWM pulse */
-#define T_OFF_PRESS_MS      1000ULL      /* Delay to recognise press to turn off */
-#define T_ERROR_MS          60000ULL     /* If delay is longer, go to error */
+#define T_OFF_PRESS_MS      1000ULL     /* Delay to recognise press to turn off */
+#define T_ERROR_MS          60000ULL    /* If delay is longer, go to error */
+#define T_ERR_FLASH_MS      255ULL      /* Counter to flash LED in error */
 
 #define OVF_CNT_DEBOUNCE    T_DEBOUNCE_MS * OVF_FACTOR
 #define OVF_CNT_LED_PULSE   T_LED_PULSE_MS * OVF_FACTOR
 #define OVF_CNT_OFF_PRESS   T_OFF_PRESS_MS * OVF_FACTOR
 #define OVF_CNT_OFF_WAIT    T_OFF_WAIT_MS * OVF_FACTOR
 #define OVF_CNT_ERROR       T_ERROR_MS * OVF_FACTOR
+#define OVF_CNT_ERR_FLASH   T_ERR_FLASH_MS * OVF_FACTOR
 
 // Counters
 struct Count_Overflows {
-    uint8_t debounce;     // Time between switch samples
-    uint16_t led_flash;   // Time between LED flashes
-    uint16_t off_press;   // Time sw is held down for OFF press
-    uint16_t err_wait;    // Time to remain active until error
+    uint8_t debounce;                   /* Time between switch samples */
+    uint16_t led_flash;                 /* Time between LED flashes */
+    uint16_t off_press;                 /* Time sw is held down for OFF press */
+    uint16_t err_wait;                  /* Time to remain active until error */
+    uint8_t err_flash;                  /* Flashing LED in error */
 };
 
 // Power states

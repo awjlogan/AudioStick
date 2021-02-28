@@ -1,6 +1,6 @@
 /*
 
-> Copyright (C) 2020 Angus Logan
+> Copyright (C) 2020-21 Angus Logan
 
  Everyone is permitted to copy and distribute verbatim or modified
  copies of this license document.
@@ -24,7 +24,7 @@
  you a DONKEY dick. Fix the problem yourself. A non-dick would submit the fix back or submit a bug report
 
  * Author:  Angus Logan
- * Version: 2.0
+ * Version: 2.1, 2.2
  * Date:    March 2020
  * Target:  Microchip [Atmel] ATtiny13A
  *
@@ -56,7 +56,9 @@
 // ISRs
 EMPTY_INTERRUPT (TIM0_OVF_vect)             // Timer0 overflow just wakes up
 
-static inline void setup_avr(void) {
+static inline void
+setup_avr(void)
+{
     /*  Clocking
         F_CPU = 9.6 MHz / 4 = 2.4 MHz
         Set top bit 1 and then write within 4 cycles
@@ -83,7 +85,9 @@ static inline void setup_avr(void) {
     ACSR = (0x1U << ACD);  // analog comparator off
 }
 
-static inline void update_sw(const struct Count_Overflows *p_cnt_ovf, bool *p_sw_pressed) {
+static inline void
+update_sw(const struct Count_Overflows *p_cnt_ovf, bool *p_sw_pressed)
+{
 
     static uint8_t sw_debounce = SW_OPEN;
 
@@ -103,7 +107,9 @@ static inline void update_sw(const struct Count_Overflows *p_cnt_ovf, bool *p_sw
     }
 }
 
-static inline void update_fsm(power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ovf, bool sw_pressed) {
+static inline void
+update_fsm(power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ovf, bool sw_pressed)
+{
 
     switch (*p_fsm_state) {
         case OFF:
@@ -140,7 +146,9 @@ static inline void update_fsm(power_fsm_t *p_fsm_state, const struct Count_Overf
     return;
 }
 
-void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_cnt_ovf, const bool *p_sw_pressed) {
+void
+update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_cnt_ovf, const bool *p_sw_pressed)
+{
 
     // Update debounce counter in all states
     if (p_cnt_ovf->debounce > OVF_CNT_DEBOUNCE) {
@@ -195,6 +203,9 @@ void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_c
 
         case ERROR:
 
+            // LED flasher, just let overflow
+            p_cnt_ovf->err_flash++;
+
             p_cnt_ovf->err_wait = 0x0000U;
 
             if (*p_sw_pressed) {
@@ -209,7 +220,9 @@ void update_counters(const power_fsm_t *p_fsm_state, struct Count_Overflows *p_c
     return;
 }
 
-void pulse_led_update(const struct Count_Overflows *p_cnt_ovf) {
+void
+pulse_led_update(const struct Count_Overflows *p_cnt_ovf)
+{
 
     static bool cnt_up = true;
     static uint8_t idx = 0;
@@ -240,19 +253,19 @@ void pulse_led_update(const struct Count_Overflows *p_cnt_ovf) {
                 cnt_up = true;
             }
         }
-
     }
 }
 
-static inline void update_outputs(const power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ovf) {
+static inline void
+update_outputs(const power_fsm_t *p_fsm_state, const struct Count_Overflows *p_cnt_ovf)
+{
 
     switch (*p_fsm_state) {
         case OFF:
 
-            // Everything OFF
-            PORTB = 0x00U;
-            // Disable LED PWM
+            // Disable PWM, everything OFF
             TCCR0A = (0x1U << WGM01) | (0x1U << WGM00);
+            PORTB = 0x00U;
             break;
 
         case START:
@@ -277,7 +290,9 @@ static inline void update_outputs(const power_fsm_t *p_fsm_state, const struct C
         case ERROR:
 
             TCCR0A = (0x1U << WGM01) | (0x1U << WGM00);
-            // REVISIT flash LED
+            if (p_cnt_ovf->err_flash == 0) {
+                PORTB ^= (0x1U << LED);
+            }
             break;
 
         default:
@@ -288,8 +303,9 @@ static inline void update_outputs(const power_fsm_t *p_fsm_state, const struct C
 
 
 
-// Main program
-int main(void)
+// Super loop
+int
+main(void)
 {
 
     power_fsm_t fsm_state = OFF;          // Start in OFF, stops wakeup on power cut etc
