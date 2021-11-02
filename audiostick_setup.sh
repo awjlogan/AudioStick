@@ -22,6 +22,19 @@ else
 	echo "" >> /boot/config.txt
 	echo $OVERLAY >> /boot/config.txt
 fi
+OVERLAY="dtoverlay=i2s-mmap"
+if grep -Fxq $OVERLAY /boot/config.txt
+then
+        echo "MMS overlay already present. Skipping."
+else
+	echo $OVERLAY >> /boot/config.txt
+fi
+
+if grep -q -E "^dtparam=audio=on" /boot/config.txt; then
+        sed -i "s|^dtparam=audio=on$|#dtparam=audio=on|" /boot/config.txt &> /dev/null
+else
+        echo "Default sound driver not loaded. Skipping."
+fi
 
 echo "Creating asound.conf ..."
 ASOUND_F="/etc/asound.conf"
