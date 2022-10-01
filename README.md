@@ -13,6 +13,7 @@ All design files and source code are under the [_Don't Be A Dick_][dbad-github] 
 From a clean installation of Raspbian, log in to your Raspberry Pi and run the following 3 lines:
 
 ```shell
+> sudo apt install git
 > git clone https://github.com/awjlogan/audiostick.git
 > cd ./audiostick
 > sudo ./audiostick_setup.sh
@@ -27,7 +28,7 @@ When it is complete, you will need to shutdown and then remove the power before 
 
 ### Using the AudioStick
 
- - When the AudioStick is off, there is no power supplied to the Raspberry Pi, so power consumption is minimised. The power LED will pulse slowly.
+ - When the AudioStick is off, there is no power supplied to the Raspberry Pi, so power consumption is minimised.
  - Pressing the button will power on the Raspberry Pi. The power LED will flash until the Raspberry Pi has successfully booted, at which point it will stay on.
  - To turn the AudioStick OFF, press and hold the button for at least one second. The power LED will flash until the Raspberry Pi has safely shutdown. Once the LED returns to pulsing, the Raspberry Pi is completely off and it is safe to remove the power if you wish.
 
