@@ -23,8 +23,9 @@ The `audiostick_setup.sh` script will:
  - Install the PCM5102's configuration in the boot configuration
  - Add the `asound.conf` configuration file
  - Add the power control service
+ - Shutdown the Raspberry Pi
 
-When it is complete, you will need to shutdown and then remove the power before powering on again.
+When it is complete, you will need to remove and reconnect the power before powering on again.
 
 ### Using the AudioStick
 
@@ -39,15 +40,6 @@ The AudioStick is intended to be used with something like MPD to allow you to co
  - Change the Raspberry Pi's hostname to a meaningful name, for example `livingroompi`. This will also allow you to have multiple AudioSticks on the same network.
  - Configure your NAS (or whatever storage) to mount at boot time in `/etc/fstab`. Be aware that the system might attempt to mount the device before the network is available.
  - Disable the swap file to increase the SD card's life (`sudo apt remove dphys-swapfile`)
-
-Setting up audiostick
-
-Setup for PCM510x:
-Configure overlay: /boot/config.txt
-uncomment: dtparam=i2s=on
-comment: #dtparam=audio=on
-add: dtoverlay=hifiberry-dac
-
 
 ## Hardware
 
